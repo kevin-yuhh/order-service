@@ -97,7 +97,7 @@ func (db *Database) UpdateUserBalance(balance, freezeBalance, version, id int64,
 		return err
 	}
 
-	r, err := db.DB.DB().Exec(updateUserBalanceSql, balance, freezeBalance, updateTime, balanceCheck, id, version)
+	r, err := db.DB.DB().Exec(updateUserBalanceSql, balance, freezeBalance, updateTime, balanceCheck, id, version, balanceCheck)
 	if err != nil {
 		return err
 	}
