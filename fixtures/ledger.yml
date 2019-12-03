@@ -1,0 +1,17 @@
+- id: 1
+  user_id: 1
+  address: 'TUsf2groYouQ7RzMkGcJH3PnSxFcwJCvrh'
+  balance: 10000
+  freeze_balance: 1000
+  update_time: 2019-12-01 12:00:00.000000
+  balance_check: '3f1e466352481d2b1cd3752a756ff710'
+  version: 1
+
+- id: 2
+  user_id: 2
+  address: 'TCJCq2S7QuC5ijzdZBF2uLjg8z8fBtwZdS'
+  balance: 9000
+  freeze_balance: 2000
+  update_time: 2019-12-01 12:00:00.000000
+  balance_check: '856eaf2b5baf26c2472dd0d547dc3b04'
+  version: 2

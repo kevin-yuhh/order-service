@@ -1,19 +1,13 @@
 package logger
 
 import (
-	"fmt"
-
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
 var Logger *zap.SugaredLogger
 
-func init() {
-	Logger = initLogger("./order.log", zapcore.InfoLevel).Sugar()
-}
-
-func initLogger(path string, level zapcore.Level) *zap.Logger {
+func InitLogger(path string, level zapcore.Level) error {
 	encoderConfig := zapcore.EncoderConfig{
 		TimeKey:        "time",
 		LevelKey:       "level",
@@ -43,7 +37,9 @@ func initLogger(path string, level zapcore.Level) *zap.Logger {
 	// Build log.
 	logger, err := config.Build()
 	if err != nil {
-		panic(fmt.Sprintf("error: %v", err))
+		return err
 	}
-	return logger
+
+	Logger = logger.Sugar()
+	return nil
 }

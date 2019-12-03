@@ -16,15 +16,20 @@ type DatabaseConfiguration struct {
 }
 
 type ServerConfiguration struct {
-	Host     string
-	Port     int
-	HttpAddr string
+	Host string
+	Port int
+}
+
+type LoggerConfiguration struct {
+	Level  int8
+	Output string
 }
 
 type Configuration struct {
 	Server   ServerConfiguration
 	Database DatabaseConfiguration
 	ScriptId int
+	Logger   LoggerConfiguration
 	EvChan   chan bool
 }
 

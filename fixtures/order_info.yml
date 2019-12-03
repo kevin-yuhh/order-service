@@ -1,0 +1,16 @@
+- id: 1
+  user_id: 1
+  file_id: 1
+  request_id: '322ed182-187c-4b87-8dd3-e309c8f9cbe0'
+  amount: 1000
+  strategy_id: 1
+  time: 90
+  description: 'test1'
+
+- id: 2
+  user_id: 2
+  request_id: 'da18239f-2182-43f9-92be-37d867c78d4a'
+  amount: 100
+  strategy_id: 1
+  time: 90
+  description: 'test2'

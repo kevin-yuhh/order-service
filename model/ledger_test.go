@@ -1,63 +1,63 @@
 package model
 
 import (
-	"fmt"
+	"errors"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/TRON-US/soter-order-service/config"
-	"github.com/TRON-US/soter-order-service/logger"
 )
 
 func TestDatabase_QueryLedgerInfoByAddress(t *testing.T) {
-	conf, err := config.NewConfiguration("config", "..")
-	if err != nil {
-		logger.Logger.Fatal(err)
-	}
+	database := PrepareTestDatabase()
 
-	fmt.Println(conf)
+	// Query exists row.
+	ledger1, err := database.QueryLedgerInfoByAddress("TUsf2groYouQ7RzMkGcJH3PnSxFcwJCvrh")
+	assert.NoError(t, err)
 
-	database, err := NewDatabase(conf)
-	if err != nil {
-		logger.Logger.Fatal(err)
-	}
+	// Query non-existing row.
+	_, err = database.QueryLedgerInfoByAddress("TTCXimHXjen9BdTFW5JvcLKGWNm3SSuECF")
+	assert.Error(t, err, errors.New("sql: no rows in result set"))
 
-	ledger, err := database.QueryLedgerInfoByAddress("TCJCq2S7QuC5ijzdZBF2uLjg8z8fBtwZdS")
-	fmt.Println(err)
-	fmt.Println(ledger)
+	t.Log(ledger1)
 }
 
-func TestDatabase_UpdateUserBalance(t *testing.T) {
-	conf, err := config.NewConfiguration("config", "..")
+func TestUpdateUserBalance(t *testing.T) {
+	database := PrepareTestDatabase()
+
+	session := database.DB.NewSession()
+	err := session.Begin()
+	assert.NoError(t, err)
+	defer session.Close()
+
+	err = UpdateUserBalance(session, 9000, 2000, 1, 1, "TUsf2groYouQ7RzMkGcJH3PnSxFcwJCvrh", int(time.Now().Local().Unix()))
 	if err != nil {
-		logger.Logger.Fatal(err)
+		err1 := session.Rollback()
+		assert.NoError(t, err1)
+		t.Error(err)
+		return
 	}
 
-	fmt.Println(conf)
-
-	database, err := NewDatabase(conf)
-	if err != nil {
-		logger.Logger.Fatal(err)
-	}
-
-	err = database.UpdateUserBalance(7000, 2000, 2, 1, "TCJCq2S7QuC5ijzdZBF2uLjg8z8fBtwZdS", 1574853071)
+	err = session.Commit()
 	assert.NoError(t, err)
 }
 
-func TestDatabase_UpdateLedgerInfo(t *testing.T) {
-	conf, err := config.NewConfiguration("config", "..")
+func TestLedgerInfo(t *testing.T) {
+	database := PrepareTestDatabase()
+
+	session := database.DB.NewSession()
+	err := session.Begin()
+	assert.NoError(t, err)
+	defer session.Close()
+
+	err = UpdateLedgerInfo(session, 100, 9000, 1000, 1000, 2, 2, "TCJCq2S7QuC5ijzdZBF2uLjg8z8fBtwZdS", int(time.Now().Local().Unix()))
 	if err != nil {
-		logger.Logger.Fatal(err)
+		err1 := session.Rollback()
+		assert.NoError(t, err1)
+		t.Error(err)
+		return
 	}
 
-	fmt.Println(conf)
-
-	database, err := NewDatabase(conf)
-	if err != nil {
-		logger.Logger.Fatal(err)
-	}
-
-	err = database.UpdateLedgerInfo(100, 7000, 1000, 1000, 4, 1, "TCJCq2S7QuC5ijzdZBF2uLjg8z8fBtwZdS", 1574853071)
+	err = session.Commit()
 	assert.NoError(t, err)
 }
