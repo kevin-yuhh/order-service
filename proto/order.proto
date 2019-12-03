@@ -20,6 +20,7 @@ message QueryBalanceResponse{
 message CreateOrderRequest{
     string address = 1;
     string request_id = 2;
+    int64 amount = 3;
 }
 
 message CreateOrderResponse{

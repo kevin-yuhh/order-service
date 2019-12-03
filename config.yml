@@ -11,6 +11,8 @@ server:
 
 scriptId: 1
 
+defaultTime: 90
+
 logger:
   level: 0
   output: ./order.log
