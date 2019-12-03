@@ -1,7 +1,7 @@
 package model
 
 import (
-	"errors"
+	"github.com/go-xorm/xorm"
 
 	chaos "github.com/TRON-US/chaos/project/soter"
 	"github.com/TRON-US/soter-order-service/common/errorm"
@@ -71,6 +71,7 @@ type Ledger struct {
 
 // Select ledger by user address.
 func (db *Database) QueryLedgerInfoByAddress(address string) (*Ledger, error) {
+	// Execute query sql.
 	row := db.DB.DB().QueryRow(queryLedgerInfoByAddressSql, address)
 	ledger := &Ledger{}
 	err := row.Scan(&ledger.Id, &ledger.UserId, &ledger.Address, &ledger.TotalTimes, &ledger.TotalSize, &ledger.Balance, &ledger.FreezeBalance, &ledger.TotalFee, &ledger.UpdateTime, &ledger.BalanceCheck, &ledger.Version)
@@ -78,13 +79,15 @@ func (db *Database) QueryLedgerInfoByAddress(address string) (*Ledger, error) {
 		return nil, err
 	}
 
+	// Verify balance check.
 	if !ledger.VerifyBalanceCheck() {
 		return nil, errorm.AccountIllegal
 	}
 	return ledger, nil
 }
 
-func (db *Database) UpdateUserBalance(balance, freezeBalance, version, id int64, address string, updateTime int) error {
+// Update user balance and freeze balance by id and version.
+func UpdateUserBalance(session *xorm.Session, balance, freezeBalance, version, id int64, address string, updateTime int) error {
 	ledger := &Ledger{
 		Address:       address,
 		Balance:       balance,
@@ -92,12 +95,14 @@ func (db *Database) UpdateUserBalance(balance, freezeBalance, version, id int64,
 		UpdateTime:    updateTime,
 	}
 
+	// Get balance check
 	balanceCheck, err := ledger.GetBalanceCheck()
 	if err != nil {
 		return err
 	}
 
-	r, err := db.DB.DB().Exec(updateUserBalanceSql, balance, freezeBalance, updateTime, balanceCheck, id, version)
+	// Execute update sql.
+	r, err := session.Exec(updateUserBalanceSql, balance, freezeBalance, updateTime, balanceCheck, id, version)
 	if err != nil {
 		return err
 	}
@@ -110,12 +115,13 @@ func (db *Database) UpdateUserBalance(balance, freezeBalance, version, id int64,
 
 	// Row has not changed.
 	if affected != 1 {
-		return errors.New("row has not changed")
+		return errorm.RowNotChanged
 	}
 	return nil
 }
 
-func (db *Database) UpdateLedgerInfo(totalSize, balance, freezeBalance, totalFee, version, id int64, address string, updateTime int) error {
+// Update ledger information by id and version.
+func UpdateLedgerInfo(session *xorm.Session, totalSize, balance, freezeBalance, totalFee, version, id int64, address string, updateTime int) error {
 	ledger := &Ledger{
 		Address:       address,
 		Balance:       balance,
@@ -123,12 +129,14 @@ func (db *Database) UpdateLedgerInfo(totalSize, balance, freezeBalance, totalFee
 		UpdateTime:    updateTime,
 	}
 
+	// Get balance check.
 	balanceCheck, err := ledger.GetBalanceCheck()
 	if err != nil {
 		return err
 	}
 
-	r, err := db.DB.DB().Exec(updateLedgerInfoSql, totalSize, balance, freezeBalance, totalFee, updateTime, balanceCheck, id, version)
+	// Execute update sql.
+	r, err := session.Exec(updateLedgerInfoSql, totalSize, balance, freezeBalance, totalFee, updateTime, balanceCheck, id, version)
 	if err != nil {
 		return err
 	}
@@ -141,7 +149,7 @@ func (db *Database) UpdateLedgerInfo(totalSize, balance, freezeBalance, totalFee
 
 	// Row has not changed.
 	if affected != 1 {
-		return errors.New("row has not changed")
+		return errorm.RowNotChanged
 	}
 	return nil
 }

@@ -1,23 +1,16 @@
 database:
-  connectionUriMaster: "root:123456@tcp(localhost)/soter?multiStatements=false"
-  connectionUriSlave: "root:123456@tcp(localhost)/soter?multiStatements=false"
+  connectionUriMaster: "root:123456@tcp(localhost)/soter_test?multiStatements=false"
+  connectionUriSlave: "root:123456@tcp(localhost)/soter_test?multiStatements=false"
   maxIdleConn: 50
   maxOpenConn: 100
   maxLifetime: 60
 
 server:
-  host: 0.0.0.0
+  host: localhost
   port: 6661
-  httpAddr: :8081
 
 scriptId: 1
 
-slack:
-  slack_notification_timeout: 30
-  slack_webhookUrl: https://hooks.slack.com/services/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
-  slack_priority_threshold: 5
-
-redis:
-  host: 127.0.0.1:6379
-  index: 0
-  poolSize: 10
+logger:
+  level: 0
+  output: ./order.log
