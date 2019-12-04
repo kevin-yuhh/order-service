@@ -73,6 +73,7 @@ func (s *Server) CreateOrder(ctx context.Context, in *orderPb.CreateOrderRequest
 	// Insert file information
 	fileId, err := model.InsertFileInfo(session, ledger.UserId, fileSize, fileName, int(time.Now().Local().Unix())+s.Time*86400)
 	if err != nil {
+		_ = session.Rollback()
 		return nil, err
 	}
 
@@ -118,6 +119,11 @@ func (s *Server) SubmitOrder(ctx context.Context, in *orderPb.SubmitOrderRequest
 	ledger, err := s.DbConn.QueryLedgerInfoByAddress(order.Address)
 	if err != nil {
 		return nil, err
+	}
+
+	// Check freeze balance illegal.
+	if ledger.FreezeBalance < order.Amount {
+		return nil, errorm.InsufficientBalance
 	}
 
 	// Open transaction.
