@@ -48,3 +48,23 @@ func TestUpdateFileHash(t *testing.T) {
 	err = session.Commit()
 	assert.NoError(t, err)
 }
+
+func TestDeleteFile(t *testing.T) {
+	database := PrepareTestDatabase()
+
+	session := database.DB.NewSession()
+	err := session.Begin()
+	assert.NoError(t, err)
+	defer session.Close()
+
+	err = DeleteFile(session, 3)
+	if err != nil {
+		err1 := session.Rollback()
+		assert.NoError(t, err1)
+		t.Error(err)
+		return
+	}
+
+	err = session.Commit()
+	assert.NoError(t, err)
+}

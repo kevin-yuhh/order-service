@@ -6,7 +6,7 @@ service OrderService {
     rpc QueryBalance(QueryBalanceRequest) returns (QueryBalanceResponse){}
     rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse){}
     rpc SubmitOrder(SubmitOrderRequest) returns (SubmitOrderResponse){}
-    rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse){}
+    rpc CloseOrder(CloseOrderRequest) returns (CloseOrderResponse){}
 }
 
 message QueryBalanceRequest{
@@ -36,10 +36,10 @@ message SubmitOrderRequest{
 message SubmitOrderResponse{
 }
 
-message CancelOrderRequest{
-
+message CloseOrderRequest{
+    int64 order_id = 1;
 }
 
-message CancelOrderResponse{
+message CloseOrderResponse{
 
 }

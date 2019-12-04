@@ -134,6 +134,7 @@ func (s *Server) SubmitOrder(ctx context.Context, in *orderPb.SubmitOrderRequest
 	}
 	defer session.Close()
 
+	// TODO Check user upload the same file twice.
 	// Update file hash by file id.
 	err = model.UpdateFileHash(session, order.FileId, fileHash)
 	if err != nil {
@@ -164,6 +165,65 @@ func (s *Server) SubmitOrder(ctx context.Context, in *orderPb.SubmitOrderRequest
 	return &orderPb.SubmitOrderResponse{}, nil
 }
 
-func (s *Server) CancelOrder(ctx context.Context, in *orderPb.CancelOrderRequest) (*orderPb.CancelOrderResponse, error) {
-	return nil, nil
+// Close order by order id.
+func (s *Server) CloseOrder(ctx context.Context, in *orderPb.CloseOrderRequest) (*orderPb.CloseOrderResponse, error) {
+	// Check input params.
+	orderId := in.GetOrderId()
+	if orderId <= 0 {
+		return nil, errorm.RequestParamEmpty
+	}
+
+	// Get order info by order id.
+	order, err := s.DbConn.QueryOrderInfoById(orderId)
+	if err != nil {
+		return nil, err
+	}
+
+	// Query ledger info by address.
+	ledger, err := s.DbConn.QueryLedgerInfoByAddress(order.Address)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check freeze balance illegal.
+	if ledger.FreezeBalance < order.Amount {
+		return nil, errorm.InsufficientBalance
+	}
+
+	// Open transaction.
+	session := s.DbConn.DB.NewSession()
+	err = session.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer session.Close()
+
+	// Delete file.
+	err = model.DeleteFile(session, order.FileId)
+	if err != nil {
+		_ = session.Rollback()
+		return nil, err
+	}
+
+	// Update ledger information by ledger id.
+	err = model.UpdateLedgerInfo(session, ledger.TotalSize, ledger.Balance+order.Amount, ledger.FreezeBalance-order.Amount, ledger.TotalFee, ledger.Version, ledger.Id, order.Address, int(time.Now().Local().Unix()))
+	if err != nil {
+		_ = session.Rollback()
+		return nil, err
+	}
+
+	// Update order status by order id.
+	err = model.UpdateOrderStatus(session, orderId, constants.OrderFailed)
+	if err != nil {
+		_ = session.Rollback()
+		return nil, err
+	}
+
+	// Submit transaction.
+	err = session.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return &orderPb.CloseOrderResponse{}, nil
 }
