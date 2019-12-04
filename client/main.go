@@ -18,7 +18,11 @@ func main() {
 	defer cc.Close()
 	c := orderPb.NewOrderServiceClient(cc)
 
-	CreateOrder(c)
+	orderId := CreateOrder(c, "TUsf2groYouQ7RzMkGcJH3PnSxFcwJCvrh", 1000000)
+
+	fmt.Println(orderId)
+
+	SubmitOrder(c, orderId)
 }
 
 func QueryUserBalance(c orderPb.OrderServiceClient) {
@@ -33,22 +37,40 @@ func QueryUserBalance(c orderPb.OrderServiceClient) {
 	fmt.Println(response.GetBalance())
 }
 
-func CreateOrder(c orderPb.OrderServiceClient) {
+func CreateOrder(c orderPb.OrderServiceClient, address string, fileSize int64) int64 {
 	requestId, err := uuid.NewV4()
 	if err != nil {
 		panic(err)
 	}
 
 	request := &orderPb.CreateOrderRequest{
-		Address:   "TUsf2groYouQ7RzMkGcJH3PnSxFcwJCvrh",
+		Address:   address,
 		RequestId: requestId.String(),
-		FileSize:  1000000,
-		FileName:  "world.txt",
+		FileSize:  fileSize,
+		FileName:  "test.txt",
 	}
 
 	response, err := c.CreateOrder(context.Background(), request)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(response.GetOrderId())
+
+	return response.GetOrderId()
+}
+
+func SubmitOrder(c orderPb.OrderServiceClient, orderId int64) {
+	fileHash, err := uuid.NewV4()
+	if err != nil {
+		panic(err)
+	}
+
+	request := &orderPb.SubmitOrderRequest{
+		OrderId:  orderId,
+		FileHash: fileHash.String(),
+	}
+
+	_, err = c.SubmitOrder(context.Background(), request)
+	if err != nil {
+		panic(err)
+	}
 }

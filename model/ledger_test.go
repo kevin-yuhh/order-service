@@ -42,7 +42,7 @@ func TestUpdateUserBalance(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestLedgerInfo(t *testing.T) {
+func TestUpdateLedgerInfo(t *testing.T) {
 	database := PrepareTestDatabase()
 
 	session := database.DB.NewSession()

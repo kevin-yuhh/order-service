@@ -1,9 +1,14 @@
 package model
 
-import "github.com/go-xorm/xorm"
+import (
+	"github.com/TRON-US/soter-order-service/common/errorm"
+
+	"github.com/go-xorm/xorm"
+)
 
 var (
 	insertFileInfoSql = `INSERT INTO file (user_id, file_name, file_size, expire_time) VALUES (?, ?, ?, from_unixtime(?))`
+	updateFileHashSql = `UPDATE file SET file_hash = ? WHERE id = ? AND file_hash IS NULL`
 )
 
 // Insert file info table.
@@ -21,4 +26,25 @@ func InsertFileInfo(session *xorm.Session, userId, fileSize int64, fileName stri
 	}
 
 	return id, nil
+}
+
+// Update file hash by file id.
+func UpdateFileHash(session *xorm.Session, id int64, fileHash string) error {
+	// Execute update sql.
+	r, err := session.Exec(updateFileHashSql, fileHash, id)
+	if err != nil {
+		return err
+	}
+
+	// Get affected number.
+	affected, err := r.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	// Row has not changed.
+	if affected != 1 {
+		return errorm.RowNotChanged
+	}
+	return nil
 }

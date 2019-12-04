@@ -47,3 +47,13 @@ func TestUpdateOrderStatus(t *testing.T) {
 	err = session.Commit()
 	assert.NoError(t, err)
 }
+
+func TestDatabase_QueryOrderInfoById(t *testing.T) {
+	database := PrepareTestDatabase()
+
+	// Query exists row.
+	order, err := database.QueryOrderInfoById(1)
+	assert.NoError(t, err)
+
+	t.Log(order)
+}
