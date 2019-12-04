@@ -28,8 +28,8 @@ func InsertOrderInfo(session *xorm.Session, userId, fileId, amount, strategyId i
 	return id, nil
 }
 
-// Update order information by id and old status.
-func UpdateOrderInfo(session *xorm.Session, id int64, status string) error {
+// Update order status by id and old status.
+func UpdateOrderStatus(session *xorm.Session, id int64, status string) error {
 	// Execute update order info sql.
 	r, err := session.Exec(updateOrderInfoSql, status, id)
 	if err != nil {

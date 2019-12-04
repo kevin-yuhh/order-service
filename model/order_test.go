@@ -28,7 +28,7 @@ func TestInsertOrderInfo(t *testing.T) {
 	t.Log(id)
 }
 
-func TestUpdateOrderInfo(t *testing.T) {
+func TestUpdateOrderStatus(t *testing.T) {
 	database := PrepareTestDatabase()
 
 	session := database.DB.NewSession()
@@ -36,7 +36,7 @@ func TestUpdateOrderInfo(t *testing.T) {
 	assert.NoError(t, err)
 	defer session.Close()
 
-	err = UpdateOrderInfo(session, 1, "S")
+	err = UpdateOrderStatus(session, 1, "S")
 	if err != nil {
 		err1 := session.Rollback()
 		assert.NoError(t, err1)

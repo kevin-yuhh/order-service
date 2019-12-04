@@ -119,7 +119,7 @@ CREATE TABLE `activity_user` (
 
 # Config.
 CREATE TABLE `config` (
-    `env` VARCHAR(4) NOT NULL COMMENT 'env',
+    `env` VARCHAR(7) NOT NULL COMMENT 'env',
     `strategy_id` TINYINT UNSIGNED NOT NULL COMMENT 'environment strategy id',
     `default_time` SMALLINT UNSIGNED NOT NULL COMMENT 'default save time',
     UNIQUE KEY `env` (`env`)

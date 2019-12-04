@@ -9,7 +9,7 @@ server:
   host: localhost
   port: 6661
 
-env: "TEST"
+env: "DEV"
 
 logger:
   level: 0

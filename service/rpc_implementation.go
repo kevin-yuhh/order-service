@@ -59,6 +59,11 @@ func (s *Server) CreateOrder(ctx context.Context, in *orderPb.CreateOrderRequest
 	// Calculate fee of this order.
 	amount := s.Fee.Fee(fileSize, ledger.TotalTimes, s.Time)
 
+	// Check balance illegal.
+	if ledger.Balance < amount {
+		return nil, errorm.InsufficientBalance
+	}
+
 	// Open transaction.
 	session := s.DbConn.DB.NewSession()
 	err = session.Begin()
