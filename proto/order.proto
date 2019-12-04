@@ -20,7 +20,8 @@ message QueryBalanceResponse{
 message CreateOrderRequest{
     string address = 1;
     string request_id = 2;
-    int64 amount = 3;
+    string file_name = 3;
+    int64 file_size = 4;
 }
 
 message CreateOrderResponse{
@@ -29,9 +30,7 @@ message CreateOrderResponse{
 
 message SubmitOrderRequest{
     int64 order_id = 1;
-    string file_name = 2;
-    int64 file_size = 3;
-    string file_hash = 4;
+    string file_hash = 2;
 }
 
 message SubmitOrderResponse{

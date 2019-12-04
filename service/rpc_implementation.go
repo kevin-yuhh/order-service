@@ -1,9 +1,12 @@
 package service
 
 import (
+	"fmt"
 	"time"
 
+	"github.com/TRON-US/soter-order-service/charge"
 	"github.com/TRON-US/soter-order-service/common/errorm"
+	"github.com/TRON-US/soter-order-service/config"
 	"github.com/TRON-US/soter-order-service/model"
 	orderPb "github.com/TRON-US/soter-order-service/proto"
 
@@ -12,6 +15,9 @@ import (
 
 type Server struct {
 	DbConn *model.Database
+	Fee    *charge.FeeCalculator
+	Config *config.Configuration
+	Time   int
 }
 
 // Query balance by address.
@@ -36,8 +42,9 @@ func (s *Server) CreateOrder(ctx context.Context, in *orderPb.CreateOrderRequest
 	// Check input params.
 	address := in.GetAddress()
 	requestId := in.GetRequestId()
-	amount := in.GetAmount()
-	if address == "" || requestId == "" || amount <= 0 {
+	fileName := in.GetFileName()
+	fileSize := in.GetFileSize()
+	if address == "" || requestId == "" || fileName == "" || fileSize <= 0 {
 		return nil, errorm.RequestParamEmpty
 	}
 
@@ -46,6 +53,11 @@ func (s *Server) CreateOrder(ctx context.Context, in *orderPb.CreateOrderRequest
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Println(fileSize, ledger.TotalTimes, s.Time)
+
+	// Calculate fee of this order.
+	amount := s.Fee.Fee(fileSize, ledger.TotalTimes, s.Time)
 
 	// Check balance illegal.
 	if ledger.Balance < amount {
@@ -60,8 +72,14 @@ func (s *Server) CreateOrder(ctx context.Context, in *orderPb.CreateOrderRequest
 	}
 	defer session.Close()
 
+	// Insert file information
+	fileId, err := model.InsertFileInfo(session, ledger.UserId, fileSize, fileName, int(time.Now().Local().Unix())+s.Time*86400)
+	if err != nil {
+		return nil, err
+	}
+
 	// Insert order information.
-	id, err := model.InsertOrderInfo(session, ledger.UserId, amount, s.DbConn.Config.ScriptId, requestId, s.DbConn.Config.DefaultTime)
+	id, err := model.InsertOrderInfo(session, ledger.UserId, fileId, amount, s.Fee.StrategyId, requestId, s.Time)
 	if err != nil {
 		_ = session.Rollback()
 		return nil, err

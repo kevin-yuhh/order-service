@@ -26,12 +26,11 @@ type LoggerConfiguration struct {
 }
 
 type Configuration struct {
-	Server      ServerConfiguration
-	Database    DatabaseConfiguration
-	ScriptId    int64
-	DefaultTime int
-	Logger      LoggerConfiguration
-	EvChan      chan bool
+	Server   ServerConfiguration
+	Database DatabaseConfiguration
+	Env      string
+	Logger   LoggerConfiguration
+	EvChan   chan bool
 }
 
 // Get config struct from file.

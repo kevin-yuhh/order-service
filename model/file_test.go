@@ -15,7 +15,7 @@ func TestInsertFileInfo(t *testing.T) {
 	assert.NoError(t, err)
 	defer session.Close()
 
-	id, err := InsertFileInfo(session, 2, 100, "QmT78zSuBmuS4z925WZfrqQ1qHaJ56DQaTfyMUF7F8ff5o", "hello.txt", int(time.Now().Local().Unix()))
+	id, err := InsertFileInfo(session, 2, 100, "hello.txt", int(time.Now().Local().Unix()))
 	if err != nil {
 		err1 := session.Rollback()
 		assert.NoError(t, err1)

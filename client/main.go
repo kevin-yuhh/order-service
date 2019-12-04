@@ -42,7 +42,8 @@ func CreateOrder(c orderPb.OrderServiceClient) {
 	request := &orderPb.CreateOrderRequest{
 		Address:   "TUsf2groYouQ7RzMkGcJH3PnSxFcwJCvrh",
 		RequestId: requestId.String(),
-		Amount:    100,
+		FileSize:  1000000,
+		FileName:  "world.txt",
 	}
 
 	response, err := c.CreateOrder(context.Background(), request)

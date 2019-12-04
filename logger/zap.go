@@ -29,7 +29,7 @@ func InitLogger(path string, level zapcore.Level) error {
 		Development:      true,
 		Encoding:         "json",
 		EncoderConfig:    encoderConfig,
-		InitialFields:    map[string]interface{}{"serviceName": "sorter_ledger"},
+		InitialFields:    map[string]interface{}{"serviceName": "sorter_order"},
 		OutputPaths:      []string{"stdout", path},
 		ErrorOutputPaths: []string{"stderr"},
 	}
