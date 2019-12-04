@@ -60,7 +60,8 @@ CREATE TABLE `file` (
     `create_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'file create time',
     `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT 'deleted flg, 0 not delete, 1 deleted',
     PRIMARY KEY (`id`),
-    CONSTRAINT `fk_file__user` FOREIGN KEY(`user_id`) REFERENCES `user`(`id`)
+    CONSTRAINT `fk_file__user` FOREIGN KEY(`user_id`) REFERENCES `user`(`id`),
+    UNIQUE KEY `user_id__file_hash` (`user_id`,`file_hash`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT 'user file information';
 
 # User order info
