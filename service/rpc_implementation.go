@@ -1,6 +1,7 @@
 package service
 
 import (
+	"strings"
 	"time"
 
 	"github.com/TRON-US/soter-order-service/charge"
@@ -135,10 +136,43 @@ func (s *Server) SubmitOrder(ctx context.Context, in *orderPb.SubmitOrderRequest
 	defer session.Close()
 
 	// Update file hash by file id.
-	err = model.UpdateFileHash(session, order.FileId, fileHash)
+	err = model.UpdateFileHash(session, order.FileId, order.FileVersion, fileHash)
 	if err != nil {
-		_ = session.Rollback()
-		return nil, err
+		if strings.Contains(err.Error(), "Error 1062") {
+			// Query file by user id and file hash.
+			file, err := s.DbConn.QueryFileByUk(ledger.UserId, fileHash)
+			if err != nil {
+				_ = session.Rollback()
+				return nil, err
+			}
+
+			// Check new order expire time if greater than old order.
+			if order.ExpireTime > file.ExpireTime {
+				// Update old file expire time to new expire time.
+				err = model.UpdateFileExpireTime(session, order.ExpireTime, file.Id, file.Version)
+				if err != nil {
+					_ = session.Rollback()
+					return nil, err
+				}
+			}
+
+			// Update order file id.
+			err = model.UpdateOrderFileIdById(session, file.Id, orderId)
+			if err != nil {
+				_ = session.Rollback()
+				return nil, err
+			}
+
+			// Delete file.
+			err = model.DeleteFile(session, order.FileId, order.FileVersion)
+			if err != nil {
+				_ = session.Rollback()
+				return nil, err
+			}
+		} else {
+			_ = session.Rollback()
+			return nil, err
+		}
 	}
 
 	// Update ledger information by ledger id.
@@ -164,6 +198,65 @@ func (s *Server) SubmitOrder(ctx context.Context, in *orderPb.SubmitOrderRequest
 	return &orderPb.SubmitOrderResponse{}, nil
 }
 
-func (s *Server) CancelOrder(ctx context.Context, in *orderPb.CancelOrderRequest) (*orderPb.CancelOrderResponse, error) {
-	return nil, nil
+// Close order by order id.
+func (s *Server) CloseOrder(ctx context.Context, in *orderPb.CloseOrderRequest) (*orderPb.CloseOrderResponse, error) {
+	// Check input params.
+	orderId := in.GetOrderId()
+	if orderId <= 0 {
+		return nil, errorm.RequestParamEmpty
+	}
+
+	// Get order info by order id.
+	order, err := s.DbConn.QueryOrderInfoById(orderId)
+	if err != nil {
+		return nil, err
+	}
+
+	// Query ledger info by address.
+	ledger, err := s.DbConn.QueryLedgerInfoByAddress(order.Address)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check freeze balance illegal.
+	if ledger.FreezeBalance < order.Amount {
+		return nil, errorm.InsufficientBalance
+	}
+
+	// Open transaction.
+	session := s.DbConn.DB.NewSession()
+	err = session.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer session.Close()
+
+	// Delete file.
+	err = model.DeleteFile(session, order.FileId, order.FileVersion)
+	if err != nil {
+		_ = session.Rollback()
+		return nil, err
+	}
+
+	// Update ledger information by ledger id.
+	err = model.UpdateLedgerInfo(session, ledger.TotalSize, ledger.Balance+order.Amount, ledger.FreezeBalance-order.Amount, ledger.TotalFee, ledger.Version, ledger.Id, order.Address, int(time.Now().Local().Unix()))
+	if err != nil {
+		_ = session.Rollback()
+		return nil, err
+	}
+
+	// Update order status by order id.
+	err = model.UpdateOrderStatus(session, orderId, constants.OrderFailed)
+	if err != nil {
+		_ = session.Rollback()
+		return nil, err
+	}
+
+	// Submit transaction.
+	err = session.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return &orderPb.CloseOrderResponse{}, nil
 }
