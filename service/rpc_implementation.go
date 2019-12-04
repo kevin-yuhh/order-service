@@ -1,6 +1,7 @@
 package service
 
 import (
+	"strings"
 	"time"
 
 	"github.com/TRON-US/soter-order-service/charge"
@@ -134,12 +135,44 @@ func (s *Server) SubmitOrder(ctx context.Context, in *orderPb.SubmitOrderRequest
 	}
 	defer session.Close()
 
-	// TODO Check user upload the same file twice.
 	// Update file hash by file id.
-	err = model.UpdateFileHash(session, order.FileId, fileHash)
+	err = model.UpdateFileHash(session, order.FileId, order.FileVersion, fileHash)
 	if err != nil {
-		_ = session.Rollback()
-		return nil, err
+		if strings.Contains(err.Error(), "Error 1062") {
+			// Query file by user id and file hash.
+			file, err := s.DbConn.QueryFileByUk(ledger.UserId, fileHash)
+			if err != nil {
+				_ = session.Rollback()
+				return nil, err
+			}
+
+			// Check new order expire time if greater than old order.
+			if order.ExpireTime > file.ExpireTime {
+				// Update old file expire time to new expire time.
+				err = model.UpdateFileExpireTime(session, order.ExpireTime, file.Id, file.Version)
+				if err != nil {
+					_ = session.Rollback()
+					return nil, err
+				}
+			}
+
+			// Update order file id.
+			err = model.UpdateOrderFileIdById(session, file.Id, orderId)
+			if err != nil {
+				_ = session.Rollback()
+				return nil, err
+			}
+
+			// Delete file.
+			err = model.DeleteFile(session, order.FileId, order.FileVersion)
+			if err != nil {
+				_ = session.Rollback()
+				return nil, err
+			}
+		} else {
+			_ = session.Rollback()
+			return nil, err
+		}
 	}
 
 	// Update ledger information by ledger id.
@@ -199,7 +232,7 @@ func (s *Server) CloseOrder(ctx context.Context, in *orderPb.CloseOrderRequest) 
 	defer session.Close()
 
 	// Delete file.
-	err = model.DeleteFile(session, order.FileId)
+	err = model.DeleteFile(session, order.FileId, order.FileVersion)
 	if err != nil {
 		_ = session.Rollback()
 		return nil, err

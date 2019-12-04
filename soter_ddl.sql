@@ -58,6 +58,8 @@ CREATE TABLE `file` (
     `file_size` BIGINT NOT NULL COMMENT 'file size',
     `expire_time` TIMESTAMP NOT NULL COMMENT 'file expire time',
     `create_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'file create time',
+    `update_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'last update time',
+    `version` BIGINT NOT NULL DEFAULT 1 COMMENT 'optimistic lock',
     `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT 'deleted flg, 0 not delete, 1 deleted',
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_file__user` FOREIGN KEY(`user_id`) REFERENCES `user`(`id`),
