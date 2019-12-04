@@ -14,7 +14,7 @@ func TestInsertOrderInfo(t *testing.T) {
 	assert.NoError(t, err)
 	defer session.Close()
 
-	id, err := InsertOrderInfo(session, 2, 100, 1, "14feb899-54b3-4025-8327-9b3c7168460c", 90)
+	id, err := InsertOrderInfo(session, 2, 2, 100, 1, "14feb899-54b3-4025-8327-9b3c7168460c", 90)
 	if err != nil {
 		err1 := session.Rollback()
 		assert.NoError(t, err1)
@@ -36,7 +36,7 @@ func TestUpdateOrderInfo(t *testing.T) {
 	assert.NoError(t, err)
 	defer session.Close()
 
-	err = UpdateOrderInfo(session, 1, 2, "S")
+	err = UpdateOrderInfo(session, 1, "S")
 	if err != nil {
 		err1 := session.Rollback()
 		assert.NoError(t, err1)

@@ -3,13 +3,13 @@ package model
 import "github.com/go-xorm/xorm"
 
 var (
-	insertFileInfoSql = `INSERT INTO file (user_id, file_hash, file_name, file_size, expire_time) VALUES (?, ?, ?, ?, from_unixtime(?))`
+	insertFileInfoSql = `INSERT INTO file (user_id, file_name, file_size, expire_time) VALUES (?, ?, ?, from_unixtime(?))`
 )
 
 // Insert file info table.
-func InsertFileInfo(session *xorm.Session, userId, fileSize int64, fileHash, fileName string, expireTime int) (int64, error) {
+func InsertFileInfo(session *xorm.Session, userId, fileSize int64, fileName string, expireTime int) (int64, error) {
 	// Execute insert sql.
-	r, err := session.Exec(insertFileInfoSql, userId, fileHash, fileName, fileSize, expireTime)
+	r, err := session.Exec(insertFileInfoSql, userId, fileName, fileSize, expireTime)
 	if err != nil {
 		return 0, err
 	}

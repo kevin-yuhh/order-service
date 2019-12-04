@@ -53,7 +53,7 @@ CREATE TABLE `ledger_log` (
 CREATE TABLE `file` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT 'file id',
     `user_id` BIGINT NOT NULL COMMENT 'user id',
-    `file_hash` VARCHAR(46) NOT NULL COMMENT 'file hash on BTFS network',
+    `file_hash` VARCHAR(46) COMMENT 'file hash on BTFS network',
     `file_name` VARCHAR(128) NOT NULL COMMENT 'file name',
     `file_size` BIGINT NOT NULL COMMENT 'file size',
     `expire_time` TIMESTAMP NOT NULL COMMENT 'file expire time',
@@ -67,7 +67,7 @@ CREATE TABLE `file` (
 CREATE TABLE `order_info` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT 'order id',
     `user_id` BIGINT NOT NULL COMMENT 'user id',
-    `file_id` BIGINT COMMENT 'file id',
+    `file_id` BIGINT NOT NULL COMMENT 'file id',
     `request_id` VARCHAR(255) NOT NULL COMMENT 'user request order id',
     `amount` BIGINT NOT NULL DEFAULT 0 COMMENT 'user order amount',
     `strategy_id` BIGINT NOT NULL COMMENT 'fee strategy id',
@@ -114,3 +114,12 @@ CREATE TABLE `activity_user` (
     CONSTRAINT `fk_activity_user__activity` FOREIGN KEY(`activity_id`) REFERENCES `activity`(`id`),
     CONSTRAINT `fk_activity_user__user` FOREIGN KEY(`user_id`) REFERENCES `user`(`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8 COMMENT 'relationship between activity and user';
+
+
+# Config.
+CREATE TABLE `config` (
+    `env` VARCHAR(4) NOT NULL COMMENT 'env',
+    `strategy_id` TINYINT UNSIGNED NOT NULL COMMENT 'environment strategy id',
+    `default_time` SMALLINT UNSIGNED NOT NULL COMMENT 'default save time',
+    UNIQUE KEY `env` (`env`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8 COMMENT 'Environment config';

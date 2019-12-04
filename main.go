@@ -6,6 +6,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/TRON-US/soter-order-service/charge"
 	"github.com/TRON-US/soter-order-service/config"
 	"github.com/TRON-US/soter-order-service/logger"
 	"github.com/TRON-US/soter-order-service/model"
@@ -63,10 +64,31 @@ func main() {
 		panic(err)
 	}
 
-	// Register gRPC server.
-	orderPb.RegisterOrderServiceServer(s, &service.Server{DbConn: db})
+	// Get configure from database by env.
+	strategyId, defaultTime, err := db.QueryConfig(conf.Env)
+	if err != nil {
+		panic(err)
+	}
 
-	logger.Logger.Info(fmt.Sprintf("Server started, listening on port %v...", conf.Server.Port))
+	// Get strategy from database by strategy id.
+	strategy, err := db.QueryStrategyById(strategyId)
+	if err != nil {
+		panic(err)
+	}
+
+	server := &service.Server{
+		DbConn: db,
+		Fee:    charge.NewFeeCalculator(strategyId, strategy.Script),
+		Config: conf,
+		Time:   defaultTime,
+	}
+
+	server.Fee.Reload()
+
+	// Register gRPC server.
+	orderPb.RegisterOrderServiceServer(s, server)
+
+	logger.Logger.Info(fmt.Sprintf("[%v] server started, listening on port: [%v]", conf.Env, conf.Server.Port))
 	if err = s.Serve(lis); err != nil {
 		panic(err)
 	}

@@ -4,3 +4,10 @@
   file_name: 'hello.txt'
   file_size: 10000
   expire_time: 2019-12-31 12:00:00.000000
+
+- id: 2
+  user_id: 2
+  file_hash: 'QmT78zSuBmuS4z925WZfrqQ1qHaJ56DQaTfyMUF7F8ff5o'
+  file_name: 'hello1.txt'
+  file_size: 9000
+  expire_time: 2019-12-31 12:00:00.000000

@@ -10,8 +10,7 @@ import (
 )
 
 type Database struct {
-	Config *config.Configuration
-	DB     *xorm.EngineGroup
+	DB *xorm.EngineGroup
 }
 
 // New database connection.
@@ -30,7 +29,7 @@ func NewDatabase(config *config.Configuration) (*Database, error) {
 	group.SetMaxOpenConns(config.Database.MaxOpenConn)
 	group.SetConnMaxLifetime(time.Second * time.Duration(config.Database.MaxLifetime))
 
-	return &Database{Config: config, DB: group}, nil
+	return &Database{DB: group}, nil
 }
 
 // Close database connection.

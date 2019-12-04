@@ -9,9 +9,7 @@ server:
   host: localhost
   port: 6661
 
-scriptId: 1
-
-defaultTime: 90
+env: "TEST"
 
 logger:
   level: 0

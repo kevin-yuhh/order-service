@@ -5,10 +5,12 @@
   amount: 1000
   strategy_id: 1
   time: 90
+  status: 'P'
   description: 'test1'
 
 - id: 2
   user_id: 2
+  file_id: 2
   request_id: 'da18239f-2182-43f9-92be-37d867c78d4a'
   amount: 100
   strategy_id: 1

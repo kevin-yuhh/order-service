@@ -1,0 +1,3 @@
+- env: 'TEST'
+  strategy_id: 1
+  default_time: 80
