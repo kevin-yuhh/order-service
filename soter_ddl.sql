@@ -4,7 +4,7 @@ CREATE TABLE `user` (
     `address` VARCHAR(34) NOT NULL COMMENT 'user address of tron',
     `email` VARCHAR(320) COMMENT 'user email address',
     `phone_num` VARCHAR(14) COMMENT 'user phone number',
-    `autopay_flg` TINYINT NOT NULL DEFAULT 0 COMMENT 'auto pay flg, 0 not auto pay, 1 auto pay',
+    `autopay_flg` TINYINT NOT NULL DEFAULT 1 COMMENT 'auto pay flg, 0 not auto pay, 1 auto pay',
     `create_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'user create time',
     `update_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'last update time',
     PRIMARY KEY (`id`),
