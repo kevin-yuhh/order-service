@@ -1,10 +1,12 @@
 package model
 
 import (
-	"github.com/go-xorm/xorm"
+	"time"
 
 	chaos "github.com/TRON-US/chaos/project/soter"
 	"github.com/TRON-US/soter-order-service/common/errorm"
+
+	"github.com/go-xorm/xorm"
 )
 
 var (
@@ -26,6 +28,7 @@ var (
 			WHERE
 				address = ?
 		`
+	insertLedgerInfoSql  = `INSERT INTO ledger (user_id, address, balance_check, update_time) VALUES (?, ?, ?, ?)`
 	updateUserBalanceSql = `
 			UPDATE
 				ledger
@@ -76,13 +79,80 @@ func (db *Database) QueryLedgerInfoByAddress(address string) (*Ledger, error) {
 	ledger := &Ledger{}
 	err := row.Scan(&ledger.Id, &ledger.UserId, &ledger.Address, &ledger.TotalTimes, &ledger.TotalSize, &ledger.Balance, &ledger.FreezeBalance, &ledger.TotalFee, &ledger.UpdateTime, &ledger.BalanceCheck, &ledger.Version)
 	if err != nil {
-		return nil, err
+		if err.Error() == "sql: no rows in result set" {
+			// Open transaction.
+			session := db.DB.NewSession()
+			err := session.Begin()
+			if err != nil {
+				return nil, err
+			}
+			defer session.Close()
+
+			// Init user info.
+			userId, err := initUser(session, address)
+			if err != nil {
+				_ = session.Rollback()
+				return nil, err
+			}
+
+			// Init ledger info
+			ledger, err = initLedger(session, userId, address)
+			if err != nil {
+				_ = session.Rollback()
+				return nil, err
+			}
+
+			// Commit transaction.
+			err = session.Commit()
+			if err != nil {
+				return nil, err
+			}
+
+			return ledger, nil
+		} else {
+			return nil, err
+		}
 	}
 
 	// Verify balance check.
 	if !ledger.VerifyBalanceCheck() {
 		return nil, errorm.AccountIllegal
 	}
+	return ledger, nil
+}
+
+// Init ledger information.
+func initLedger(session *xorm.Session, userId int64, userAddress string) (*Ledger, error) {
+	now := time.Now().Local()
+	ledger := &Ledger{
+		UserId:        userId,
+		Address:       userAddress,
+		Balance:       0,
+		FreezeBalance: 0,
+		UpdateTime:    int(now.Unix()),
+	}
+
+	// Get balance check.
+	balanceCheck, err := ledger.GetBalanceCheck()
+	if err != nil {
+		return nil, err
+	}
+
+	// Execute SQL.
+	r, err := session.Exec(insertLedgerInfoSql, userId, userAddress, balanceCheck, now.Format("2006-01-02 15:04:05"))
+	if err != nil {
+		return nil, err
+	}
+
+	// Get last insert id.
+	id, err := r.LastInsertId()
+	if err != nil {
+		return nil, err
+	}
+
+	ledger.Id = id
+	ledger.Version = 1
+
 	return ledger, nil
 }
 

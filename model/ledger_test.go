@@ -1,7 +1,6 @@
 package model
 
 import (
-	"errors"
 	"testing"
 	"time"
 
@@ -15,11 +14,13 @@ func TestDatabase_QueryLedgerInfoByAddress(t *testing.T) {
 	ledger1, err := database.QueryLedgerInfoByAddress("TUsf2groYouQ7RzMkGcJH3PnSxFcwJCvrh")
 	assert.NoError(t, err)
 
-	// Query non-existing row.
-	_, err = database.QueryLedgerInfoByAddress("TTCXimHXjen9BdTFW5JvcLKGWNm3SSuECF")
-	assert.Error(t, err, errors.New("sql: no rows in result set"))
-
 	t.Log(ledger1)
+
+	// Query non-existing row.
+	ledger2, err := database.QueryLedgerInfoByAddress("TTCXimHXjen9BdTFW5JvcLKGWNm3SSuECF")
+	assert.NoError(t, err)
+
+	t.Log(ledger2)
 }
 
 func TestUpdateUserBalance(t *testing.T) {
