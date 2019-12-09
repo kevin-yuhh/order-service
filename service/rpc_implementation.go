@@ -56,7 +56,15 @@ func (s *Server) CreateOrder(ctx context.Context, in *orderPb.CreateOrderRequest
 	}
 
 	// Calculate fee of this order.
-	amount := s.Fee.Fee(fileSize, ledger.TotalTimes, s.Time)
+	fee := s.Fee.Fee(fileSize, ledger.TotalTimes, s.Time)
+
+	// Get activity rate.
+	rate, err := s.DbConn.QueryActivityByUserId(ledger.UserId)
+	if err != nil {
+		return nil, err
+	}
+
+	amount := int64(rate * float64(fee))
 
 	// Check balance illegal.
 	if ledger.Balance < amount {

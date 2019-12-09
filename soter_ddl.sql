@@ -100,7 +100,7 @@ CREATE TABLE `activity`
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT 'activity id',
     `name` VARCHAR(255) NOT NULL COMMENT 'activity name',
     `description` LONGTEXT COMMENT 'activity description',
-    `strategy_id`  BIGINT NOT NULL COMMENT 'activity strategy id',
+    `strategy`  FLOAT NOT NULL COMMENT 'activity strategy',
     `begin_time`  DATETIME NOT NULL COMMENT 'activity begin time',
     `end_time`  DATETIME NOT NULL COMMENT 'activity end time',
     `status`  TINYINT NOT NULL DEFAULT 0 COMMENT 'activity status, 0 effective, 1 invalid',

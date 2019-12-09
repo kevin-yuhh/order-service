@@ -1,0 +1,11 @@
+- id: 1
+  name: 'test activity'
+  strategy: 0.6
+  begin_time: 2019-12-01 12:00:00.000000
+  end_time: 2019-12-31 12:00:00.000000
+
+- id: 2
+  name: 'test activity1'
+  strategy: 0.8
+  begin_time: 2019-12-01 12:00:00.000000
+  end_time: 2019-12-31 12:00:00.000000
