@@ -1,6 +1,6 @@
 module github.com/TRON-US/soter-order-service
 
-go 1.12
+go 1.13
 
 require (
 	github.com/TRON-US/chaos v0.0.0-20191127092550-25dfe381e050

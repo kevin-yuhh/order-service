@@ -1,5 +1,7 @@
 package model
 
+import "github.com/TRON-US/soter-order-service/common/errorm"
+
 var (
 	queryActivityByUserIdSql = `
 		SELECT 
@@ -29,7 +31,7 @@ func (db *Database) QueryActivityByUserId(userId int64) (float64, error) {
 	row := db.DB.DB().QueryRow(queryActivityByUserIdSql, userId)
 	err := row.Scan(&strategy)
 	if err != nil {
-		if err.Error() == "sql: no rows in result set" {
+		if err.Error() == errorm.QueryResultEmpty {
 			return 1, nil
 		} else {
 			return 0, err

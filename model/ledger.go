@@ -79,7 +79,7 @@ func (db *Database) QueryLedgerInfoByAddress(address string) (*Ledger, error) {
 	ledger := &Ledger{}
 	err := row.Scan(&ledger.Id, &ledger.UserId, &ledger.Address, &ledger.TotalTimes, &ledger.TotalSize, &ledger.Balance, &ledger.FreezeBalance, &ledger.TotalFee, &ledger.UpdateTime, &ledger.BalanceCheck, &ledger.Version)
 	if err != nil {
-		if err.Error() == "sql: no rows in result set" {
+		if err.Error() == errorm.QueryResultEmpty {
 			// Open transaction.
 			session := db.DB.NewSession()
 			err := session.Begin()

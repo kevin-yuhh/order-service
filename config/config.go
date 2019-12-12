@@ -25,11 +25,18 @@ type LoggerConfiguration struct {
 	Output string
 }
 
+type SlackConfiguration struct {
+	SlackNotificationTimeout int
+	SlackWebhookUrl          string
+	SlackPriorityThreshold   int
+}
+
 type Configuration struct {
 	Server   ServerConfiguration
 	Database DatabaseConfiguration
 	Env      string
 	Logger   LoggerConfiguration
+	Slack    SlackConfiguration
 	EvChan   chan bool
 }
 

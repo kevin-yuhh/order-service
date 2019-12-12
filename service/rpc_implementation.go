@@ -1,13 +1,18 @@
 package service
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
+	"github.com/TRON-US/soter-order-service/utils"
+
+	"github.com/TRON-US/chaos/network/slack"
 	"github.com/TRON-US/soter-order-service/charge"
 	"github.com/TRON-US/soter-order-service/common/constants"
 	"github.com/TRON-US/soter-order-service/common/errorm"
 	"github.com/TRON-US/soter-order-service/config"
+	"github.com/TRON-US/soter-order-service/logger"
 	"github.com/TRON-US/soter-order-service/model"
 	orderPb "github.com/TRON-US/soter-order-service/proto"
 
@@ -32,6 +37,14 @@ func (s *Server) QueryBalance(ctx context.Context, in *orderPb.QueryBalanceReque
 	// Query ledger info by address.
 	ledger, err := s.DbConn.QueryLedgerInfoByAddress(address)
 	if err != nil {
+		go func(address string, err error) {
+			errMessage := fmt.Sprintf("Address: [%v] query ledger info error, reasons: [%v]", address, err)
+			logger.Logger.Errorw(errMessage, "function", constants.QueryLedgerInfoModel)
+			_ = slack.SendSlackNotification(s.Config.Slack.SlackWebhookUrl,
+				utils.ErrorRequestBody(errMessage, constants.QueryLedgerInfoModel, constants.SlackNotifyLevel0),
+				s.Config.Slack.SlackNotificationTimeout,
+				slack.Priority0, slack.Priority(s.Config.Slack.SlackPriorityThreshold))
+		}(address, err)
 		return nil, err
 	}
 
@@ -52,6 +65,14 @@ func (s *Server) CreateOrder(ctx context.Context, in *orderPb.CreateOrderRequest
 	// Query ledger info by address.
 	ledger, err := s.DbConn.QueryLedgerInfoByAddress(address)
 	if err != nil {
+		go func(address, requestId string, err error) {
+			errMessage := fmt.Sprintf("Address: [%v], requestId: [%v] query ledger info error, reasons: [%v]", address, requestId, err)
+			logger.Logger.Errorw(errMessage, "function", constants.QueryLedgerInfoModel)
+			_ = slack.SendSlackNotification(s.Config.Slack.SlackWebhookUrl,
+				utils.ErrorRequestBody(errMessage, constants.QueryLedgerInfoModel, constants.SlackNotifyLevel0),
+				s.Config.Slack.SlackNotificationTimeout,
+				slack.Priority0, slack.Priority(s.Config.Slack.SlackPriorityThreshold))
+		}(address, requestId, err)
 		return nil, err
 	}
 
@@ -61,6 +82,14 @@ func (s *Server) CreateOrder(ctx context.Context, in *orderPb.CreateOrderRequest
 	// Get activity rate.
 	rate, err := s.DbConn.QueryActivityByUserId(ledger.UserId)
 	if err != nil {
+		go func(address, requestId string, err error) {
+			errMessage := fmt.Sprintf("Address: [%v], requestId: [%v] query activity info error, reasons: [%v]", address, requestId, err)
+			logger.Logger.Errorw(errMessage, "function", constants.QueryActivityInfoModel)
+			_ = slack.SendSlackNotification(s.Config.Slack.SlackWebhookUrl,
+				utils.ErrorRequestBody(errMessage, constants.QueryActivityInfoModel, constants.SlackNotifyLevel0),
+				s.Config.Slack.SlackNotificationTimeout,
+				slack.Priority0, slack.Priority(s.Config.Slack.SlackPriorityThreshold))
+		}(address, requestId, err)
 		return nil, err
 	}
 
@@ -75,6 +104,14 @@ func (s *Server) CreateOrder(ctx context.Context, in *orderPb.CreateOrderRequest
 	session := s.DbConn.DB.NewSession()
 	err = session.Begin()
 	if err != nil {
+		go func(address, requestId string, err error) {
+			errMessage := fmt.Sprintf("Address: [%v], requestId: [%v] open transaction error, reasons: [%v]", address, requestId, err)
+			logger.Logger.Errorw(errMessage, "function", constants.SessionBegin)
+			_ = slack.SendSlackNotification(s.Config.Slack.SlackWebhookUrl,
+				utils.ErrorRequestBody(errMessage, constants.SessionBegin, constants.SlackNotifyLevel0),
+				s.Config.Slack.SlackNotificationTimeout,
+				slack.Priority0, slack.Priority(s.Config.Slack.SlackPriorityThreshold))
+		}(address, requestId, err)
 		return nil, err
 	}
 	defer session.Close()
@@ -83,6 +120,14 @@ func (s *Server) CreateOrder(ctx context.Context, in *orderPb.CreateOrderRequest
 	fileId, err := model.InsertFileInfo(session, ledger.UserId, fileSize, fileName, int(time.Now().Local().Unix())+s.Time*86400)
 	if err != nil {
 		_ = session.Rollback()
+		go func(address, requestId string, err error) {
+			errMessage := fmt.Sprintf("Address: [%v], requestId: [%v] insert file info error, reasons: [%v]", address, requestId, err)
+			logger.Logger.Errorw(errMessage, "function", constants.InsertFileInfoModel)
+			_ = slack.SendSlackNotification(s.Config.Slack.SlackWebhookUrl,
+				utils.ErrorRequestBody(errMessage, constants.InsertFileInfoModel, constants.SlackNotifyLevel0),
+				s.Config.Slack.SlackNotificationTimeout,
+				slack.Priority0, slack.Priority(s.Config.Slack.SlackPriorityThreshold))
+		}(address, requestId, err)
 		return nil, err
 	}
 
@@ -90,6 +135,14 @@ func (s *Server) CreateOrder(ctx context.Context, in *orderPb.CreateOrderRequest
 	id, err := model.InsertOrderInfo(session, ledger.UserId, fileId, amount, s.Fee.StrategyId, requestId, s.Time)
 	if err != nil {
 		_ = session.Rollback()
+		go func(address, requestId string, err error) {
+			errMessage := fmt.Sprintf("Address: [%v], requestId: [%v] insert order info error, reasons: [%v]", address, requestId, err)
+			logger.Logger.Errorw(errMessage, "function", constants.InsertOrderInfoModel)
+			_ = slack.SendSlackNotification(s.Config.Slack.SlackWebhookUrl,
+				utils.ErrorRequestBody(errMessage, constants.InsertOrderInfoModel, constants.SlackNotifyLevel0),
+				s.Config.Slack.SlackNotificationTimeout,
+				slack.Priority0, slack.Priority(s.Config.Slack.SlackPriorityThreshold))
+		}(address, requestId, err)
 		return nil, err
 	}
 
@@ -97,12 +150,28 @@ func (s *Server) CreateOrder(ctx context.Context, in *orderPb.CreateOrderRequest
 	err = model.UpdateUserBalance(session, ledger.Balance-amount, ledger.FreezeBalance+amount, ledger.Version, ledger.Id, ledger.Address, int(time.Now().Local().Unix()))
 	if err != nil {
 		_ = session.Rollback()
+		go func(address, requestId string, err error) {
+			errMessage := fmt.Sprintf("Address: [%v], requestId: [%v] update user balance error, reasons: [%v]", address, requestId, err)
+			logger.Logger.Errorw(errMessage, "function", constants.UpdateUserBalanceModel)
+			_ = slack.SendSlackNotification(s.Config.Slack.SlackWebhookUrl,
+				utils.ErrorRequestBody(errMessage, constants.UpdateUserBalanceModel, constants.SlackNotifyLevel0),
+				s.Config.Slack.SlackNotificationTimeout,
+				slack.Priority0, slack.Priority(s.Config.Slack.SlackPriorityThreshold))
+		}(address, requestId, err)
 		return nil, err
 	}
 
 	// Submit transaction.
 	err = session.Commit()
 	if err != nil {
+		go func(address, requestId string, err error) {
+			errMessage := fmt.Sprintf("Address: [%v], requestId: [%v] commit transaction error, reasons: [%v]", address, requestId, err)
+			logger.Logger.Errorw(errMessage, "function", constants.SessionCommit)
+			_ = slack.SendSlackNotification(s.Config.Slack.SlackWebhookUrl,
+				utils.ErrorRequestBody(errMessage, constants.SessionCommit, constants.SlackNotifyLevel0),
+				s.Config.Slack.SlackNotificationTimeout,
+				slack.Priority0, slack.Priority(s.Config.Slack.SlackPriorityThreshold))
+		}(address, requestId, err)
 		return nil, err
 	}
 
@@ -121,12 +190,30 @@ func (s *Server) SubmitOrder(ctx context.Context, in *orderPb.SubmitOrderRequest
 	// Get order info by order id.
 	order, err := s.DbConn.QueryOrderInfoById(orderId)
 	if err != nil {
+		if err.Error() != errorm.QueryResultEmpty {
+			go func(orderId int64, err error) {
+				errMessage := fmt.Sprintf("orderId: [%v] query order info error, reasons: [%v]", orderId, err)
+				logger.Logger.Errorw(errMessage, "function", constants.QueryOrderInfoModel)
+				_ = slack.SendSlackNotification(s.Config.Slack.SlackWebhookUrl,
+					utils.ErrorRequestBody(errMessage, constants.QueryOrderInfoModel, constants.SlackNotifyLevel0),
+					s.Config.Slack.SlackNotificationTimeout,
+					slack.Priority0, slack.Priority(s.Config.Slack.SlackPriorityThreshold))
+			}(orderId, err)
+		}
 		return nil, err
 	}
 
 	// Query ledger info by address.
 	ledger, err := s.DbConn.QueryLedgerInfoByAddress(order.Address)
 	if err != nil {
+		go func(orderId int64, err error) {
+			errMessage := fmt.Sprintf("orderId: [%v] query ledger info error, reasons: [%v]", orderId, err)
+			logger.Logger.Errorw(errMessage, "function", constants.QueryLedgerInfoModel)
+			_ = slack.SendSlackNotification(s.Config.Slack.SlackWebhookUrl,
+				utils.ErrorRequestBody(errMessage, constants.QueryLedgerInfoModel, constants.SlackNotifyLevel0),
+				s.Config.Slack.SlackNotificationTimeout,
+				slack.Priority0, slack.Priority(s.Config.Slack.SlackPriorityThreshold))
+		}(orderId, err)
 		return nil, err
 	}
 
@@ -139,6 +226,14 @@ func (s *Server) SubmitOrder(ctx context.Context, in *orderPb.SubmitOrderRequest
 	session := s.DbConn.DB.NewSession()
 	err = session.Begin()
 	if err != nil {
+		go func(orderId int64, err error) {
+			errMessage := fmt.Sprintf("orderId: [%v] open transaction error, reasons: [%v]", orderId, err)
+			logger.Logger.Errorw(errMessage, "function", constants.SessionBegin)
+			_ = slack.SendSlackNotification(s.Config.Slack.SlackWebhookUrl,
+				utils.ErrorRequestBody(errMessage, constants.SessionBegin, constants.SlackNotifyLevel0),
+				s.Config.Slack.SlackNotificationTimeout,
+				slack.Priority0, slack.Priority(s.Config.Slack.SlackPriorityThreshold))
+		}(orderId, err)
 		return nil, err
 	}
 	defer session.Close()
@@ -151,6 +246,14 @@ func (s *Server) SubmitOrder(ctx context.Context, in *orderPb.SubmitOrderRequest
 			file, err := s.DbConn.QueryFileByUk(ledger.UserId, fileHash)
 			if err != nil {
 				_ = session.Rollback()
+				go func(orderId int64, err error) {
+					errMessage := fmt.Sprintf("orderId: [%v] query file by file hash error, reasons: [%v]", orderId, err)
+					logger.Logger.Errorw(errMessage, "function", constants.QueryFileByUkModel)
+					_ = slack.SendSlackNotification(s.Config.Slack.SlackWebhookUrl,
+						utils.ErrorRequestBody(errMessage, constants.QueryFileByUkModel, constants.SlackNotifyLevel0),
+						s.Config.Slack.SlackNotificationTimeout,
+						slack.Priority0, slack.Priority(s.Config.Slack.SlackPriorityThreshold))
+				}(orderId, err)
 				return nil, err
 			}
 
@@ -160,6 +263,14 @@ func (s *Server) SubmitOrder(ctx context.Context, in *orderPb.SubmitOrderRequest
 				err = model.UpdateFileExpireTime(session, order.ExpireTime, file.Id, file.Version)
 				if err != nil {
 					_ = session.Rollback()
+					go func(orderId int64, err error) {
+						errMessage := fmt.Sprintf("orderId: [%v] update file expire time error, reasons: [%v]", orderId, err)
+						logger.Logger.Errorw(errMessage, "function", constants.UpdateFileExpireTimeModel)
+						_ = slack.SendSlackNotification(s.Config.Slack.SlackWebhookUrl,
+							utils.ErrorRequestBody(errMessage, constants.UpdateFileExpireTimeModel, constants.SlackNotifyLevel0),
+							s.Config.Slack.SlackNotificationTimeout,
+							slack.Priority0, slack.Priority(s.Config.Slack.SlackPriorityThreshold))
+					}(orderId, err)
 					return nil, err
 				}
 			}
@@ -168,6 +279,14 @@ func (s *Server) SubmitOrder(ctx context.Context, in *orderPb.SubmitOrderRequest
 			err = model.UpdateOrderFileIdById(session, file.Id, orderId)
 			if err != nil {
 				_ = session.Rollback()
+				go func(orderId int64, err error) {
+					errMessage := fmt.Sprintf("orderId: [%v] update order info file id error, reasons: [%v]", orderId, err)
+					logger.Logger.Errorw(errMessage, "function", constants.UpdateOrderFileIdModel)
+					_ = slack.SendSlackNotification(s.Config.Slack.SlackWebhookUrl,
+						utils.ErrorRequestBody(errMessage, constants.UpdateOrderFileIdModel, constants.SlackNotifyLevel0),
+						s.Config.Slack.SlackNotificationTimeout,
+						slack.Priority0, slack.Priority(s.Config.Slack.SlackPriorityThreshold))
+				}(orderId, err)
 				return nil, err
 			}
 
@@ -175,10 +294,26 @@ func (s *Server) SubmitOrder(ctx context.Context, in *orderPb.SubmitOrderRequest
 			err = model.DeleteFile(session, order.FileId, order.FileVersion)
 			if err != nil {
 				_ = session.Rollback()
+				go func(orderId int64, err error) {
+					errMessage := fmt.Sprintf("orderId: [%v] delete file error, reasons: [%v]", orderId, err)
+					logger.Logger.Errorw(errMessage, "function", constants.DeleteFileModel)
+					_ = slack.SendSlackNotification(s.Config.Slack.SlackWebhookUrl,
+						utils.ErrorRequestBody(errMessage, constants.DeleteFileModel, constants.SlackNotifyLevel0),
+						s.Config.Slack.SlackNotificationTimeout,
+						slack.Priority0, slack.Priority(s.Config.Slack.SlackPriorityThreshold))
+				}(orderId, err)
 				return nil, err
 			}
 		} else {
 			_ = session.Rollback()
+			go func(orderId int64, err error) {
+				errMessage := fmt.Sprintf("orderId: [%v] update file hash error, reasons: [%v]", orderId, err)
+				logger.Logger.Errorw(errMessage, "function", constants.UpdateFileHashModel)
+				_ = slack.SendSlackNotification(s.Config.Slack.SlackWebhookUrl,
+					utils.ErrorRequestBody(errMessage, constants.UpdateFileHashModel, constants.SlackNotifyLevel0),
+					s.Config.Slack.SlackNotificationTimeout,
+					slack.Priority0, slack.Priority(s.Config.Slack.SlackPriorityThreshold))
+			}(orderId, err)
 			return nil, err
 		}
 	}
@@ -187,6 +322,14 @@ func (s *Server) SubmitOrder(ctx context.Context, in *orderPb.SubmitOrderRequest
 	err = model.UpdateLedgerInfo(session, ledger.TotalSize+order.FileSize, ledger.Balance, ledger.FreezeBalance-order.Amount, ledger.TotalFee+order.Amount, ledger.Version, ledger.Id, order.Address, int(time.Now().Local().Unix()))
 	if err != nil {
 		_ = session.Rollback()
+		go func(orderId int64, err error) {
+			errMessage := fmt.Sprintf("orderId: [%v] update ledger info error, reasons: [%v]", orderId, err)
+			logger.Logger.Errorw(errMessage, "function", constants.UpdateLedgerInfoModel)
+			_ = slack.SendSlackNotification(s.Config.Slack.SlackWebhookUrl,
+				utils.ErrorRequestBody(errMessage, constants.UpdateLedgerInfoModel, constants.SlackNotifyLevel0),
+				s.Config.Slack.SlackNotificationTimeout,
+				slack.Priority0, slack.Priority(s.Config.Slack.SlackPriorityThreshold))
+		}(orderId, err)
 		return nil, err
 	}
 
@@ -194,12 +337,28 @@ func (s *Server) SubmitOrder(ctx context.Context, in *orderPb.SubmitOrderRequest
 	err = model.UpdateOrderStatus(session, orderId, constants.OrderSuccess)
 	if err != nil {
 		_ = session.Rollback()
+		go func(orderId int64, err error) {
+			errMessage := fmt.Sprintf("orderId: [%v] update order status error, reasons: [%v]", orderId, err)
+			logger.Logger.Errorw(errMessage, "function", constants.UpdateOrderStatusModel)
+			_ = slack.SendSlackNotification(s.Config.Slack.SlackWebhookUrl,
+				utils.ErrorRequestBody(errMessage, constants.UpdateOrderStatusModel, constants.SlackNotifyLevel0),
+				s.Config.Slack.SlackNotificationTimeout,
+				slack.Priority0, slack.Priority(s.Config.Slack.SlackPriorityThreshold))
+		}(orderId, err)
 		return nil, err
 	}
 
 	// Submit transaction.
 	err = session.Commit()
 	if err != nil {
+		go func(orderId int64, err error) {
+			errMessage := fmt.Sprintf("orderId: [%v] commit transaction error, reasons: [%v]", orderId, err)
+			logger.Logger.Errorw(errMessage, "function", constants.SessionCommit)
+			_ = slack.SendSlackNotification(s.Config.Slack.SlackWebhookUrl,
+				utils.ErrorRequestBody(errMessage, constants.SessionCommit, constants.SlackNotifyLevel0),
+				s.Config.Slack.SlackNotificationTimeout,
+				slack.Priority0, slack.Priority(s.Config.Slack.SlackPriorityThreshold))
+		}(orderId, err)
 		return nil, err
 	}
 
@@ -217,12 +376,30 @@ func (s *Server) CloseOrder(ctx context.Context, in *orderPb.CloseOrderRequest) 
 	// Get order info by order id.
 	order, err := s.DbConn.QueryOrderInfoById(orderId)
 	if err != nil {
+		if err.Error() != errorm.QueryResultEmpty {
+			go func(orderId int64, err error) {
+				errMessage := fmt.Sprintf("orderId: [%v] query order info error, reasons: [%v]", orderId, err)
+				logger.Logger.Errorw(errMessage, "function", constants.QueryOrderInfoModel)
+				_ = slack.SendSlackNotification(s.Config.Slack.SlackWebhookUrl,
+					utils.ErrorRequestBody(errMessage, constants.QueryOrderInfoModel, constants.SlackNotifyLevel0),
+					s.Config.Slack.SlackNotificationTimeout,
+					slack.Priority0, slack.Priority(s.Config.Slack.SlackPriorityThreshold))
+			}(orderId, err)
+		}
 		return nil, err
 	}
 
 	// Query ledger info by address.
 	ledger, err := s.DbConn.QueryLedgerInfoByAddress(order.Address)
 	if err != nil {
+		go func(orderId int64, err error) {
+			errMessage := fmt.Sprintf("orderId: [%v] query ledger info error, reasons: [%v]", orderId, err)
+			logger.Logger.Errorw(errMessage, "function", constants.QueryLedgerInfoModel)
+			_ = slack.SendSlackNotification(s.Config.Slack.SlackWebhookUrl,
+				utils.ErrorRequestBody(errMessage, constants.QueryLedgerInfoModel, constants.SlackNotifyLevel0),
+				s.Config.Slack.SlackNotificationTimeout,
+				slack.Priority0, slack.Priority(s.Config.Slack.SlackPriorityThreshold))
+		}(orderId, err)
 		return nil, err
 	}
 
@@ -235,6 +412,14 @@ func (s *Server) CloseOrder(ctx context.Context, in *orderPb.CloseOrderRequest) 
 	session := s.DbConn.DB.NewSession()
 	err = session.Begin()
 	if err != nil {
+		go func(orderId int64, err error) {
+			errMessage := fmt.Sprintf("orderId: [%v] open transaction error, reasons: [%v]", orderId, err)
+			logger.Logger.Errorw(errMessage, "function", constants.SessionBegin)
+			_ = slack.SendSlackNotification(s.Config.Slack.SlackWebhookUrl,
+				utils.ErrorRequestBody(errMessage, constants.SessionBegin, constants.SlackNotifyLevel0),
+				s.Config.Slack.SlackNotificationTimeout,
+				slack.Priority0, slack.Priority(s.Config.Slack.SlackPriorityThreshold))
+		}(orderId, err)
 		return nil, err
 	}
 	defer session.Close()
@@ -243,6 +428,14 @@ func (s *Server) CloseOrder(ctx context.Context, in *orderPb.CloseOrderRequest) 
 	err = model.DeleteFile(session, order.FileId, order.FileVersion)
 	if err != nil {
 		_ = session.Rollback()
+		go func(orderId int64, err error) {
+			errMessage := fmt.Sprintf("orderId: [%v] delete file error, reasons: [%v]", orderId, err)
+			logger.Logger.Errorw(errMessage, "function", constants.DeleteFileModel)
+			_ = slack.SendSlackNotification(s.Config.Slack.SlackWebhookUrl,
+				utils.ErrorRequestBody(errMessage, constants.DeleteFileModel, constants.SlackNotifyLevel0),
+				s.Config.Slack.SlackNotificationTimeout,
+				slack.Priority0, slack.Priority(s.Config.Slack.SlackPriorityThreshold))
+		}(orderId, err)
 		return nil, err
 	}
 
@@ -250,6 +443,14 @@ func (s *Server) CloseOrder(ctx context.Context, in *orderPb.CloseOrderRequest) 
 	err = model.UpdateLedgerInfo(session, ledger.TotalSize, ledger.Balance+order.Amount, ledger.FreezeBalance-order.Amount, ledger.TotalFee, ledger.Version, ledger.Id, order.Address, int(time.Now().Local().Unix()))
 	if err != nil {
 		_ = session.Rollback()
+		go func(orderId int64, err error) {
+			errMessage := fmt.Sprintf("orderId: [%v] update ledger info error, reasons: [%v]", orderId, err)
+			logger.Logger.Errorw(errMessage, "function", constants.UpdateLedgerInfoModel)
+			_ = slack.SendSlackNotification(s.Config.Slack.SlackWebhookUrl,
+				utils.ErrorRequestBody(errMessage, constants.UpdateLedgerInfoModel, constants.SlackNotifyLevel0),
+				s.Config.Slack.SlackNotificationTimeout,
+				slack.Priority0, slack.Priority(s.Config.Slack.SlackPriorityThreshold))
+		}(orderId, err)
 		return nil, err
 	}
 
@@ -257,12 +458,28 @@ func (s *Server) CloseOrder(ctx context.Context, in *orderPb.CloseOrderRequest) 
 	err = model.UpdateOrderStatus(session, orderId, constants.OrderFailed)
 	if err != nil {
 		_ = session.Rollback()
+		go func(orderId int64, err error) {
+			errMessage := fmt.Sprintf("orderId: [%v] update order status error, reasons: [%v]", orderId, err)
+			logger.Logger.Errorw(errMessage, "function", constants.UpdateOrderStatusModel)
+			_ = slack.SendSlackNotification(s.Config.Slack.SlackWebhookUrl,
+				utils.ErrorRequestBody(errMessage, constants.UpdateOrderStatusModel, constants.SlackNotifyLevel0),
+				s.Config.Slack.SlackNotificationTimeout,
+				slack.Priority0, slack.Priority(s.Config.Slack.SlackPriorityThreshold))
+		}(orderId, err)
 		return nil, err
 	}
 
 	// Submit transaction.
 	err = session.Commit()
 	if err != nil {
+		go func(orderId int64, err error) {
+			errMessage := fmt.Sprintf("orderId: [%v] commit transaction error, reasons: [%v]", orderId, err)
+			logger.Logger.Errorw(errMessage, "function", constants.SessionCommit)
+			_ = slack.SendSlackNotification(s.Config.Slack.SlackWebhookUrl,
+				utils.ErrorRequestBody(errMessage, constants.SessionCommit, constants.SlackNotifyLevel0),
+				s.Config.Slack.SlackNotificationTimeout,
+				slack.Priority0, slack.Priority(s.Config.Slack.SlackPriorityThreshold))
+		}(orderId, err)
 		return nil, err
 	}
 

@@ -88,7 +88,7 @@ func main() {
 	// Register gRPC server.
 	orderPb.RegisterOrderServiceServer(s, server)
 
-	logger.Logger.Info(fmt.Sprintf("[%v] server started, listening on port: [%v]", conf.Env, conf.Server.Port))
+	logger.Logger.Infof("[%v] server started, listening on port: [%v]", conf.Env, conf.Server.Port)
 	if err = s.Serve(lis); err != nil {
 		panic(err)
 	}

@@ -14,7 +14,7 @@ message QueryBalanceRequest{
 }
 
 message QueryBalanceResponse{
-    int64 balance = 3;
+    int64 balance = 1;
 }
 
 message CreateOrderRequest{
@@ -25,7 +25,7 @@ message CreateOrderRequest{
 }
 
 message CreateOrderResponse{
-    int64 order_id = 3;
+    int64 order_id = 1;
 }
 
 message SubmitOrderRequest{

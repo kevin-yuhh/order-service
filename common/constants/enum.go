@@ -5,4 +5,11 @@ const (
 	OrderSuccess = "S"
 	OrderFailed  = "F"
 	OrderOrigin  = "U"
+
+	SlackNotifyLevel0 = "0"
+	SlackNotifyLevel1 = "1"
+	SlackNotifyLevel2 = "2"
+	SlackNotifyLevel3 = "3"
+	SlackNotifyLevel4 = "4"
+	SlackNotifyLevel5 = "5"
 )
