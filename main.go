@@ -10,8 +10,8 @@ import (
 	"github.com/TRON-US/soter-order-service/config"
 	"github.com/TRON-US/soter-order-service/logger"
 	"github.com/TRON-US/soter-order-service/model"
-	orderPb "github.com/TRON-US/soter-order-service/proto"
 	"github.com/TRON-US/soter-order-service/service"
+	orderPb "github.com/TRON-US/soter-proto/order-service"
 
 	"github.com/prometheus/common/log"
 	flag "github.com/spf13/pflag"
