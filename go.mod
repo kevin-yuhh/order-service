@@ -4,11 +4,12 @@ go 1.13
 
 require (
 	github.com/TRON-US/chaos v0.0.0-20191127092550-25dfe381e050
+	github.com/TRON-US/soter-proto v0.0.0-20191213083006-71ea73a5967a
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/go-xorm/xorm v0.7.9
 	github.com/gofrs/uuid v3.2.0+incompatible
-	github.com/golang/protobuf v1.3.1
+	github.com/golang/protobuf v1.3.2
 	github.com/prometheus/common v0.4.0
 	github.com/spf13/pflag v1.0.3
 	github.com/spf13/viper v1.5.0

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	orderPb "github.com/TRON-US/soter-order-service/proto"
+	orderPb "github.com/TRON-US/soter-proto/order-service"
 
 	"github.com/gofrs/uuid"
 	"google.golang.org/grpc"

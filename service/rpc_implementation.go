@@ -5,8 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/TRON-US/soter-order-service/utils"
-
 	"github.com/TRON-US/chaos/network/slack"
 	"github.com/TRON-US/soter-order-service/charge"
 	"github.com/TRON-US/soter-order-service/common/constants"
@@ -14,7 +12,8 @@ import (
 	"github.com/TRON-US/soter-order-service/config"
 	"github.com/TRON-US/soter-order-service/logger"
 	"github.com/TRON-US/soter-order-service/model"
-	orderPb "github.com/TRON-US/soter-order-service/proto"
+	"github.com/TRON-US/soter-order-service/utils"
+	orderPb "github.com/TRON-US/soter-proto/order-service"
 
 	"golang.org/x/net/context"
 )
