@@ -71,6 +71,7 @@ CREATE TABLE `order_info` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT 'order id',
     `user_id` BIGINT NOT NULL COMMENT 'user id',
     `file_id` BIGINT NOT NULL COMMENT 'file id',
+    `type` CHAR(1) NOT NULL DEFAULT 'C' COMMENT 'C: charge, R: renew',
     `request_id` VARCHAR(255) NOT NULL COMMENT 'user request order id',
     `amount` BIGINT NOT NULL DEFAULT 0 COMMENT 'user order amount',
     `strategy_id` BIGINT NOT NULL COMMENT 'fee strategy id',

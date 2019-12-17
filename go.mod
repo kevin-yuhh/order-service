@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/TRON-US/chaos v0.0.0-20191127092550-25dfe381e050
-	github.com/TRON-US/soter-proto v0.0.0-20191213083006-71ea73a5967a
+	github.com/TRON-US/soter-proto v0.0.0-20191217071430-e0fc99e4066b
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/go-xorm/xorm v0.7.9
@@ -16,6 +16,6 @@ require (
 	github.com/yuin/gopher-lua v0.0.0-20191128022950-c6266f4fe8d7
 	go.uber.org/zap v1.10.0
 	golang.org/x/net v0.0.0-20190522155817-f3200d17e092
-	google.golang.org/grpc v1.21.0
+	google.golang.org/grpc v1.25.1
 	gopkg.in/testfixtures.v2 v2.6.0
 )

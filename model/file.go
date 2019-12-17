@@ -7,7 +7,26 @@ import (
 )
 
 var (
+	queryFileByIdSql = `
+		SELECT
+			b.address, 
+			a.file_name, 
+			a.file_size, 
+			unix_timestamp(a.expire_time), 
+			a.file_hash,
+			a.deleted, 
+			a.version 
+		FROM 
+			file a 
+		LEFT JOIN
+			user b
+		ON
+			a.user_id = b.id
+		WHERE
+			a.id = ?
+		`
 	queryFileByUkSql        = `SELECT id, file_name, file_size, unix_timestamp(expire_time), deleted, version FROM file WHERE user_id = ? AND file_hash = ?`
+	queryMaxExpireByHashSql = `select IFNULL(unix_timestamp(max(expire_time)),0) as expire_time from file where file_hash = ?`
 	insertFileInfoSql       = `INSERT INTO file (user_id, file_name, file_size, expire_time) VALUES (?, ?, ?, from_unixtime(?))`
 	updateFileHashSql       = `UPDATE file SET file_hash = ?, version = version + 1 WHERE id = ? AND version = ? AND file_hash IS NULL`
 	updateFileExpireTimeSql = `UPDATE file SET expire_time = from_unixtime(?), version = version + 1 WHERE id = ? AND version = ?`
@@ -15,12 +34,29 @@ var (
 )
 
 type File struct {
+	Address    string
 	Id         int64
 	FileName   string
 	FileSize   int64
+	FileHash   string
 	ExpireTime int64
 	Deleted    int8
 	Version    int64
+}
+
+// Select file information by id.
+func (db *Database) QueryFileById(id int64) (*File, error) {
+	// Execute query sql.
+	row := db.DB.DB().QueryRow(queryFileByIdSql, id)
+	file := &File{}
+	err := row.Scan(&file.Address, &file.FileName, &file.FileSize, &file.ExpireTime, &file.FileHash, &file.Deleted, &file.Version)
+	if err != nil {
+		return nil, err
+	}
+
+	file.Id = id
+
+	return file, nil
 }
 
 // Select file information by UK.
@@ -34,6 +70,21 @@ func (db *Database) QueryFileByUk(userId int64, fileHash string) (*File, error) 
 	}
 
 	return file, nil
+}
+
+// Select max expire time by file hash.
+func (db *Database) QueryMaxExpireByHash(fileHash string) (int64, error) {
+	// Execute query sql.
+	row := db.DB.DB().QueryRow(queryMaxExpireByHashSql, fileHash)
+
+	var maxExpireTime int64
+
+	err := row.Scan(&maxExpireTime)
+	if err != nil {
+		return 0, err
+	}
+
+	return maxExpireTime, nil
 }
 
 // Insert file info table.

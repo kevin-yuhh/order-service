@@ -16,4 +16,5 @@ const (
 	UpdateFileHashModel       = "model.UpdateFileHash"
 	UpdateLedgerInfoModel     = "model.UpdateLedgerInfo"
 	UpdateOrderStatusModel    = "model.UpdateOrderStatus"
+	QueryMaxExpireModel       = "model.QueryMaxExpireByHash"
 )

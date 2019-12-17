@@ -7,13 +7,14 @@ import (
 )
 
 var (
-	insertOrderInfoSql       = `INSERT INTO order_info (user_id, file_id, request_id, amount, strategy_id, time, status) VALUES (?,?,?,?,?,?,'P')`
+	insertOrderInfoSql       = `INSERT INTO order_info (user_id, file_id, type, request_id, amount, strategy_id, time, status) VALUES (?,?,?,?,?,?,?,?)`
 	updateOrderInfoSql       = `UPDATE order_info SET status = ? WHERE id = ? AND status = 'P'`
 	updateOrderFileIdByIdSql = `UPDATE order_info SET file_id = ? WHERE id = ? AND status = 'P'`
 	queryOrderInfoById       = `
 		SELECT
 			o.user_id, 
 			o.file_id, 
+			o.type, 
 			o.request_id, 
 			o.amount, 
 			o.status, 
@@ -39,6 +40,7 @@ var (
 type Order struct {
 	UserId      int64
 	FileId      int64
+	OrderType   string
 	RequestId   string
 	Amount      int64
 	Status      string
@@ -49,9 +51,9 @@ type Order struct {
 }
 
 // Insert order info.
-func InsertOrderInfo(session *xorm.Session, userId, fileId, amount, strategyId int64, requestId string, time int) (int64, error) {
+func InsertOrderInfo(session *xorm.Session, userId, fileId, amount, strategyId int64, requestId, orderType, status string, time int) (int64, error) {
 	// Execute insert order info sql.
-	r, err := session.Exec(insertOrderInfoSql, userId, fileId, requestId, amount, strategyId, time)
+	r, err := session.Exec(insertOrderInfoSql, userId, fileId, orderType, requestId, amount, strategyId, time, status)
 	if err != nil {
 		return 0, err
 	}
@@ -112,7 +114,7 @@ func (db *Database) QueryOrderInfoById(id int64) (*Order, error) {
 	// Execute query sql.
 	row := db.DB.DB().QueryRow(queryOrderInfoById, id)
 	order := &Order{}
-	err := row.Scan(&order.UserId, &order.FileId, &order.RequestId, &order.Amount, &order.Status, &order.Address, &order.FileSize, &order.ExpireTime, &order.FileVersion)
+	err := row.Scan(&order.UserId, &order.FileId, &order.OrderType, &order.RequestId, &order.Amount, &order.Status, &order.Address, &order.FileSize, &order.ExpireTime, &order.FileVersion)
 	if err != nil {
 		return nil, err
 	}

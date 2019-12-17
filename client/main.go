@@ -42,6 +42,26 @@ func main() {
 
 	balance = QueryUserBalance(client, "TUsf2groYouQ7RzMkGcJH3PnSxFcwJCvrh")
 	fmt.Printf("After submit order, balance is %v\n", balance)
+
+	orderId, _ = PrepareRenew(client, 1)
+
+	balance = QueryUserBalance(client, "TUsf2groYouQ7RzMkGcJH3PnSxFcwJCvrh")
+	fmt.Printf("After prepare renew, balance is %v\n", balance)
+
+	CloseOrder(client, orderId)
+
+	balance = QueryUserBalance(client, "TUsf2groYouQ7RzMkGcJH3PnSxFcwJCvrh")
+	fmt.Printf("After close renew order, balance is %v\n", balance)
+
+	orderId, _ = PrepareRenew(client, 1)
+
+	balance = QueryUserBalance(client, "TUsf2groYouQ7RzMkGcJH3PnSxFcwJCvrh")
+	fmt.Printf("After prepare renew, balance is %v\n", balance)
+
+	SubmitOrder(client, orderId)
+
+	balance = QueryUserBalance(client, "TUsf2groYouQ7RzMkGcJH3PnSxFcwJCvrh")
+	fmt.Printf("After submit renew order, balance is %v\n", balance)
 }
 
 func QueryUserBalance(c orderPb.OrderServiceClient, address string) int64 {
@@ -104,4 +124,17 @@ func CloseOrder(c orderPb.OrderServiceClient, orderId int64) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func PrepareRenew(c orderPb.OrderServiceClient, fileId int64) (int64, int64) {
+	request := &orderPb.PrepareRenewRequest{
+		FileId: fileId,
+	}
+
+	response, err := c.PrepareRenew(context.Background(), request)
+	if err != nil {
+		panic(err)
+	}
+
+	return response.GetOrderId(), response.GetStatus()
 }

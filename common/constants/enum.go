@@ -12,4 +12,7 @@ const (
 	SlackNotifyLevel3 = "3"
 	SlackNotifyLevel4 = "4"
 	SlackNotifyLevel5 = "5"
+
+	Charge = "C"
+	Renew  = "R"
 )

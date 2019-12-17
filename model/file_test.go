@@ -7,6 +7,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestDatabase_QueryFileById(t *testing.T) {
+	database := PrepareTestDatabase()
+
+	// Query exists row.
+	file, err := database.QueryFileById(1)
+	assert.NoError(t, err)
+
+	t.Log(file)
+}
+
 func TestDatabase_QueryFileByUk(t *testing.T) {
 	database := PrepareTestDatabase()
 
@@ -15,6 +25,15 @@ func TestDatabase_QueryFileByUk(t *testing.T) {
 	assert.NoError(t, err)
 
 	t.Log(file)
+}
+
+func TestDatabase_QueryMaxExpireByHash(t *testing.T) {
+	database := PrepareTestDatabase()
+
+	maxExpireTime, err := database.QueryMaxExpireByHash("QmT78zSuBmuS4z925WZfrqQ1qHaJ56DQaTfyMUF7F8ff5o")
+	assert.NoError(t, err)
+
+	t.Log(maxExpireTime)
 }
 
 func TestInsertFileInfo(t *testing.T) {
