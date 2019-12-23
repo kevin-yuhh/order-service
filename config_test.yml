@@ -1,0 +1,21 @@
+database:
+  connectionUriMaster: "soter:8p5PMq)7@tcp(10.1.1.11)/soter_v2?multiStatements=false"
+  connectionUriSlave: "soter:8p5PMq)7@tcp(10.1.1.11)/soter_v2?multiStatements=false"
+  maxIdleConn: 50
+  maxOpenConn: 100
+  maxLifetime: 60
+
+server:
+  host: 0.0.0.0
+  port: 8301
+
+env: "TEST"
+
+logger:
+  level: 0
+  output: ./order.log
+
+slack:
+  slackNotificationTimeout: 30
+  slackWebhookUrl: https://hooks.slack.com/services/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
+  slackPriorityThreshold: 5
