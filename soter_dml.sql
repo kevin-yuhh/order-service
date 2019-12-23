@@ -23,3 +23,5 @@ end
 function calc(size, total_times, time)
     return time*(size_fee(size, total_times));
 end');
+
+INSERT INTO config (env, strategy_id, default_time) VALUES ('TEST',1,30);
