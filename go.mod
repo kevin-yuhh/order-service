@@ -3,7 +3,7 @@ module github.com/TRON-US/soter-order-service
 go 1.13
 
 require (
-	github.com/TRON-US/chaos v0.0.0-20191127092550-25dfe381e050
+	github.com/TRON-US/chaos v1.0.0
 	github.com/TRON-US/soter-proto v0.0.0-20191217071430-e0fc99e4066b
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/go-sql-driver/mysql v1.4.1
