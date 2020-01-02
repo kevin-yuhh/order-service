@@ -9,6 +9,7 @@ const (
 	InsertOrderInfoModel      = "model.InsertOrderInfo"
 	UpdateUserBalanceModel    = "model.UpdateUserBalance"
 	QueryOrderInfoModel       = "model.QueryOrderInfoById"
+	QueryOrderInfo1Model      = "model.QueryOrderInfoByRequestId"
 	QueryFileByUkModel        = "model.QueryFileByUk"
 	UpdateFileExpireTimeModel = "model.UpdateFileExpireTime"
 	UpdateOrderFileIdModel    = "model.UpdateOrderFileIdById"

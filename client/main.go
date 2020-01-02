@@ -20,47 +20,57 @@ func main() {
 	}()
 	client := orderPb.NewOrderServiceClient(conn)
 
-	balance := QueryUserBalance(client, "TUsf2groYouQ7RzMkGcJH3PnSxFcwJCvrh")
+	address := "TUsf2groYouQ7RzMkGcJH3PnSxFcwJCvrh"
+
+	balance := QueryUserBalance(client, address)
 	fmt.Printf("Balance is %v\n", balance)
 
-	orderId := CreateOrder(client, "TUsf2groYouQ7RzMkGcJH3PnSxFcwJCvrh", 1000000)
+	orderId, requestId := CreateOrder(client, address, 1000000)
 
-	balance = QueryUserBalance(client, "TUsf2groYouQ7RzMkGcJH3PnSxFcwJCvrh")
+	balance = QueryUserBalance(client, address)
 	fmt.Printf("After create order, balance is %v\n", balance)
+
+	fmt.Println(QueryOrderInfo(client, address, requestId))
 
 	CloseOrder(client, orderId)
 
-	balance = QueryUserBalance(client, "TUsf2groYouQ7RzMkGcJH3PnSxFcwJCvrh")
+	fmt.Println(QueryOrderInfo(client, address, requestId))
+
+	balance = QueryUserBalance(client, address)
 	fmt.Printf("After close order, balance is %v\n", balance)
 
-	orderId = CreateOrder(client, "TUsf2groYouQ7RzMkGcJH3PnSxFcwJCvrh", 1000000)
+	orderId, requestId = CreateOrder(client, address, 1000000)
 
-	balance = QueryUserBalance(client, "TUsf2groYouQ7RzMkGcJH3PnSxFcwJCvrh")
+	balance = QueryUserBalance(client, address)
 	fmt.Printf("After create order, balance is %v\n", balance)
+
+	fmt.Println(QueryOrderInfo(client, address, requestId))
 
 	SubmitOrder(client, orderId)
 
-	balance = QueryUserBalance(client, "TUsf2groYouQ7RzMkGcJH3PnSxFcwJCvrh")
+	fmt.Println(QueryOrderInfo(client, address, requestId))
+
+	balance = QueryUserBalance(client, address)
 	fmt.Printf("After submit order, balance is %v\n", balance)
 
 	orderId, _ = PrepareRenew(client, 1)
 
-	balance = QueryUserBalance(client, "TUsf2groYouQ7RzMkGcJH3PnSxFcwJCvrh")
+	balance = QueryUserBalance(client, address)
 	fmt.Printf("After prepare renew, balance is %v\n", balance)
 
 	CloseOrder(client, orderId)
 
-	balance = QueryUserBalance(client, "TUsf2groYouQ7RzMkGcJH3PnSxFcwJCvrh")
+	balance = QueryUserBalance(client, address)
 	fmt.Printf("After close renew order, balance is %v\n", balance)
 
 	orderId, _ = PrepareRenew(client, 1)
 
-	balance = QueryUserBalance(client, "TUsf2groYouQ7RzMkGcJH3PnSxFcwJCvrh")
+	balance = QueryUserBalance(client, address)
 	fmt.Printf("After prepare renew, balance is %v\n", balance)
 
 	SubmitOrder(client, orderId)
 
-	balance = QueryUserBalance(client, "TUsf2groYouQ7RzMkGcJH3PnSxFcwJCvrh")
+	balance = QueryUserBalance(client, address)
 	fmt.Printf("After submit renew order, balance is %v\n", balance)
 }
 
@@ -77,7 +87,21 @@ func QueryUserBalance(c orderPb.OrderServiceClient, address string) int64 {
 	return response.GetBalance()
 }
 
-func CreateOrder(c orderPb.OrderServiceClient, address string, fileSize int64) int64 {
+func QueryOrderInfo(c orderPb.OrderServiceClient, address, requestId string) *orderPb.QueryOrderResponse {
+	request := &orderPb.QueryOrderRequest{
+		Address:   address,
+		RequestId: requestId,
+	}
+
+	response, err := c.QueryOrder(context.Background(), request)
+	if err != nil {
+		panic(err)
+	}
+
+	return response
+}
+
+func CreateOrder(c orderPb.OrderServiceClient, address string, fileSize int64) (int64, string) {
 	requestId, err := uuid.NewV4()
 	if err != nil {
 		panic(err)
@@ -95,7 +119,7 @@ func CreateOrder(c orderPb.OrderServiceClient, address string, fileSize int64) i
 		panic(err)
 	}
 
-	return response.GetOrderId()
+	return response.GetOrderId(), requestId.String()
 }
 
 func SubmitOrder(c orderPb.OrderServiceClient, orderId int64) {

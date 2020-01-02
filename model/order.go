@@ -20,6 +20,8 @@ var (
 			o.status, 
 			u.address, 
 			f.file_size,
+			f.file_name,
+			IFNULL(f.file_hash,''),
 			unix_timestamp(f.expire_time),
 			f.version
 		FROM 
@@ -35,6 +37,35 @@ var (
 		WHERE 
 			o.id = ?
 		`
+	queryOrderInfoRequestId = `
+		SELECT
+			o.user_id, 
+			o.file_id, 
+			o.type, 
+			o.request_id, 
+			o.amount, 
+			o.status, 
+			u.address, 
+			f.file_size,
+			f.file_name,
+			IFNULL(f.file_hash,''),
+			unix_timestamp(f.expire_time),
+			f.version
+		FROM 
+			order_info o 
+		LEFT JOIN 
+			user u 
+		ON 
+			o.user_id = u.id
+		LEFT JOIN 
+			file f
+		ON
+			o.file_id = f.id 
+		WHERE 
+			o.request_id = ?
+		AND
+			u.address = ?
+		`
 )
 
 type Order struct {
@@ -46,6 +77,8 @@ type Order struct {
 	Status      string
 	Address     string
 	FileSize    int64
+	FileName    string
+	FileHash    string
 	ExpireTime  int64
 	FileVersion int64
 }
@@ -114,8 +147,24 @@ func (db *Database) QueryOrderInfoById(id int64) (*Order, error) {
 	// Execute query sql.
 	row := db.DB.DB().QueryRow(queryOrderInfoById, id)
 	order := &Order{}
-	err := row.Scan(&order.UserId, &order.FileId, &order.OrderType, &order.RequestId, &order.Amount, &order.Status, &order.Address, &order.FileSize, &order.ExpireTime, &order.FileVersion)
+	err := row.Scan(&order.UserId, &order.FileId, &order.OrderType, &order.RequestId, &order.Amount, &order.Status, &order.Address, &order.FileSize, &order.FileName, &order.FileHash, &order.ExpireTime, &order.FileVersion)
 	if err != nil {
+		return nil, err
+	}
+
+	return order, nil
+}
+
+// Query order info by request id and address.
+func (db *Database) QueryOrderInfoByRequestId(requestId, address string) (*Order, error) {
+	// Execute query sql.
+	row := db.DB.DB().QueryRow(queryOrderInfoRequestId, requestId, address)
+	order := &Order{}
+	err := row.Scan(&order.UserId, &order.FileId, &order.OrderType, &order.RequestId, &order.Amount, &order.Status, &order.Address, &order.FileSize, &order.FileName, &order.FileHash, &order.ExpireTime, &order.FileVersion)
+	if err != nil {
+		if err.Error() == errorm.QueryResultEmpty {
+			return nil, nil
+		}
 		return nil, err
 	}
 

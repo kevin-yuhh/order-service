@@ -77,3 +77,13 @@ func TestDatabase_QueryOrderInfoById(t *testing.T) {
 
 	t.Log(order)
 }
+
+func TestDatabase_QueryOrderInfoByRequestId(t *testing.T) {
+	database := PrepareTestDatabase()
+
+	// Query exists row.
+	order, err := database.QueryOrderInfoByRequestId("322ed182-187c-4b87-8dd3-e309c8f9cbe0", "TUsf2groYouQ7RzMkGcJH3PnSxFcwJCvrh")
+	assert.NoError(t, err)
+
+	t.Log(order)
+}

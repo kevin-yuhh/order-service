@@ -51,6 +51,45 @@ func (s *Server) QueryBalance(ctx context.Context, in *orderPb.QueryBalanceReque
 	return &orderPb.QueryBalanceResponse{Balance: ledger.Balance}, nil
 }
 
+// Query order info by request id.
+func (s *Server) QueryOrder(ctx context.Context, in *orderPb.QueryOrderRequest) (*orderPb.QueryOrderResponse, error) {
+	// Check input params.
+	address := in.GetAddress()
+	requestId := in.GetRequestId()
+	if address == "" || requestId == "" {
+		return nil, errorm.RequestParamEmpty
+	}
+
+	// Query order info by request id and address.
+	order, err := s.DbConn.QueryOrderInfoByRequestId(requestId, address)
+	if err != nil {
+		go func(address, requestId string, err error) {
+			errMessage := fmt.Sprintf("Address: [%v], requestId: [%v] query order info error, reasons: [%v]", address, requestId, err)
+			logger.Logger.Errorw(errMessage, "function", constants.QueryOrderInfo1Model)
+			_ = slack.SendSlackNotification(s.Config.Slack.SlackWebhookUrl,
+				utils.ErrorRequestBody(errMessage, constants.QueryOrderInfo1Model, constants.SlackNotifyLevel0),
+				s.Config.Slack.SlackNotificationTimeout,
+				slack.Priority0, slack.Priority(s.Config.Slack.SlackPriorityThreshold))
+		}(address, requestId, err)
+		return nil, err
+	}
+
+	// Check order info is nil.
+	if order == nil {
+		return nil, nil
+	}
+
+	return &orderPb.QueryOrderResponse{
+		Type:        order.OrderType,
+		FileName:    order.FileName,
+		FileSize:    order.FileSize,
+		FileHash:    order.FileHash,
+		Fee:         order.Amount,
+		Status:      order.Status,
+		Description: "",
+	}, nil
+}
+
 // Create order by address and requestId.
 func (s *Server) CreateOrder(ctx context.Context, in *orderPb.CreateOrderRequest) (*orderPb.CreateOrderResponse, error) {
 	// Check input params.

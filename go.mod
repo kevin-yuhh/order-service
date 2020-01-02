@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/TRON-US/chaos v1.0.0
-	github.com/TRON-US/soter-proto v0.0.0-20191217071430-e0fc99e4066b
+	github.com/TRON-US/soter-proto v0.0.0-20200102035207-6277f25ee199
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/go-xorm/xorm v0.7.9
