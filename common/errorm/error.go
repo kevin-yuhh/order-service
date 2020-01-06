@@ -8,5 +8,7 @@ var (
 	RequestParamEmpty   = errors.New("request param is empty")
 	InsufficientBalance = errors.New("insufficient balance")
 	OrderStatusIllegal  = errors.New("order status illegal")
-	FileStatusIllegal   = errors.New("file status illegal")
+	OrderTypeIllegal    = errors.New("order type illegal")
+	OrderNotExists      = errors.New("order not exists")
+	BtfsStatusNotExists = errors.New("btfs status not exists")
 )

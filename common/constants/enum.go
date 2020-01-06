@@ -15,4 +15,7 @@ const (
 
 	Charge = "C"
 	Renew  = "R"
+
+	BtfsNodeAgentComplete = "complete"
+	BtfsNodeAgentError    = "error"
 )

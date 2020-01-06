@@ -68,6 +68,26 @@ func TestUpdateOrderFileIdById(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestUpdateOrderSessionById(t *testing.T) {
+	database := PrepareTestDatabase()
+
+	session := database.DB.NewSession()
+	err := session.Begin()
+	assert.NoError(t, err)
+	defer session.Close()
+
+	err = UpdateOrderSessionById(session, "82feae9b-3f69-46c0-91b7-6d452614e173", "127.0.0.1", 1)
+	if err != nil {
+		err1 := session.Rollback()
+		assert.NoError(t, err1)
+		t.Error(err)
+		return
+	}
+
+	err = session.Commit()
+	assert.NoError(t, err)
+}
+
 func TestDatabase_QueryOrderInfoById(t *testing.T) {
 	database := PrepareTestDatabase()
 

@@ -21,7 +21,7 @@ func TestDatabase_QueryFileByUk(t *testing.T) {
 	database := PrepareTestDatabase()
 
 	// Query exists row.
-	file, err := database.QueryFileByUk(1, "QmT78zSuBmuS4z925WZfrqQ1qHaJ56DQaTfyMUF7F8ff5o")
+	file, err := database.QueryFileByUk(1, 1)
 	assert.NoError(t, err)
 
 	t.Log(file)
@@ -30,7 +30,7 @@ func TestDatabase_QueryFileByUk(t *testing.T) {
 func TestDatabase_QueryMaxExpireByHash(t *testing.T) {
 	database := PrepareTestDatabase()
 
-	maxExpireTime, err := database.QueryMaxExpireByHash("QmT78zSuBmuS4z925WZfrqQ1qHaJ56DQaTfyMUF7F8ff5o")
+	maxExpireTime, err := database.QueryMaxExpireByHash(1)
 	assert.NoError(t, err)
 
 	t.Log(maxExpireTime)
@@ -58,7 +58,7 @@ func TestInsertFileInfo(t *testing.T) {
 	t.Log(id)
 }
 
-func TestUpdateFileHash(t *testing.T) {
+func TestUpdateBtfsFileId(t *testing.T) {
 	database := PrepareTestDatabase()
 
 	session := database.DB.NewSession()
@@ -66,7 +66,7 @@ func TestUpdateFileHash(t *testing.T) {
 	assert.NoError(t, err)
 	defer session.Close()
 
-	err = UpdateFileHash(session, 3, 1, "QmT78zSuBmuS4z925WZfrqQ1qHaJ56DQaTfyMUF7F8ff51")
+	err = UpdateBtfsFileId(session, 1, 2, 1)
 	if err != nil {
 		err1 := session.Rollback()
 		assert.NoError(t, err1)
@@ -107,6 +107,26 @@ func TestDeleteFile(t *testing.T) {
 	defer session.Close()
 
 	err = DeleteFile(session, 3, 1)
+	if err != nil {
+		err1 := session.Rollback()
+		assert.NoError(t, err1)
+		t.Error(err)
+		return
+	}
+
+	err = session.Commit()
+	assert.NoError(t, err)
+}
+
+func TestReopenFile(t *testing.T) {
+	database := PrepareTestDatabase()
+
+	session := database.DB.NewSession()
+	err := session.Begin()
+	assert.NoError(t, err)
+	defer session.Close()
+
+	err = ReopenFile(session, 4, 1, 1578284537)
 	if err != nil {
 		err1 := session.Rollback()
 		assert.NoError(t, err1)

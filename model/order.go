@@ -7,15 +7,18 @@ import (
 )
 
 var (
-	insertOrderInfoSql       = `INSERT INTO order_info (user_id, file_id, type, request_id, amount, strategy_id, time, status) VALUES (?,?,?,?,?,?,?,?)`
-	updateOrderInfoSql       = `UPDATE order_info SET status = ? WHERE id = ? AND status = 'P'`
-	updateOrderFileIdByIdSql = `UPDATE order_info SET file_id = ? WHERE id = ? AND status = 'P'`
-	queryOrderInfoById       = `
+	insertOrderInfoSql        = `INSERT INTO order_info (user_id, file_id, type, request_id, amount, strategy_id, time, status) VALUES (?,?,?,?,?,?,?,?)`
+	updateOrderInfoSql        = `UPDATE order_info SET status = ? WHERE id = ? AND status = 'P'`
+	updateOrderFileIdByIdSql  = `UPDATE order_info SET file_id = ? WHERE id = ? AND status = 'P'`
+	updateOrderSessionByIdSql = `UPDATE order_info SET session_id = ?, btfs_ip = ? WHERE id = ? AND status = 'P'`
+	queryOrderInfoById        = `
 		SELECT
+			o.id,
 			o.user_id, 
 			o.file_id, 
 			o.type, 
 			o.request_id, 
+			o.time,
 			o.amount, 
 			o.status, 
 			u.address, 
@@ -31,7 +34,21 @@ var (
 		ON 
 			o.user_id = u.id
 		LEFT JOIN 
-			file f
+			(
+				SELECT 
+					a.id,
+					a.file_size, 
+					a.file_name, 
+					b.file_hash, 
+					a.expire_time,
+					a.version 
+				FROM 
+					file a
+				LEFT JOIN
+					btfs_file b
+				ON
+					a.btfs_file_id = b.id
+			) f
 		ON
 			o.file_id = f.id 
 		WHERE 
@@ -39,10 +56,12 @@ var (
 		`
 	queryOrderInfoRequestId = `
 		SELECT
+			o.id,
 			o.user_id, 
 			o.file_id, 
 			o.type, 
 			o.request_id, 
+			o.time,
 			o.amount, 
 			o.status, 
 			u.address, 
@@ -58,7 +77,21 @@ var (
 		ON 
 			o.user_id = u.id
 		LEFT JOIN 
-			file f
+			(
+				SELECT 
+					a.id,
+					a.file_size, 
+					a.file_name, 
+					b.file_hash, 
+					a.expire_time,
+					a.version 
+				FROM 
+					file a
+				LEFT JOIN
+					btfs_file b
+				ON
+					a.btfs_file_id = b.id
+			) f
 		ON
 			o.file_id = f.id 
 		WHERE 
@@ -69,10 +102,12 @@ var (
 )
 
 type Order struct {
+	Id          int64
 	UserId      int64
 	FileId      int64
 	OrderType   string
 	RequestId   string
+	Times       int
 	Amount      int64
 	Status      string
 	Address     string
@@ -142,12 +177,22 @@ func UpdateOrderFileIdById(session *xorm.Session, fileId, id int64) error {
 	return nil
 }
 
+// Update order session id and btfs ip address by id.
+func UpdateOrderSessionById(session *xorm.Session, sessionId, nodeIp string, id int64) error {
+	// Execute update order info sql.
+	_, err := session.Exec(updateOrderSessionByIdSql, sessionId, nodeIp, id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // Query order info by order id.
 func (db *Database) QueryOrderInfoById(id int64) (*Order, error) {
 	// Execute query sql.
 	row := db.DB.DB().QueryRow(queryOrderInfoById, id)
 	order := &Order{}
-	err := row.Scan(&order.UserId, &order.FileId, &order.OrderType, &order.RequestId, &order.Amount, &order.Status, &order.Address, &order.FileSize, &order.FileName, &order.FileHash, &order.ExpireTime, &order.FileVersion)
+	err := row.Scan(&order.Id, &order.UserId, &order.FileId, &order.OrderType, &order.RequestId, &order.Times, &order.Amount, &order.Status, &order.Address, &order.FileSize, &order.FileName, &order.FileHash, &order.ExpireTime, &order.FileVersion)
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +205,7 @@ func (db *Database) QueryOrderInfoByRequestId(requestId, address string) (*Order
 	// Execute query sql.
 	row := db.DB.DB().QueryRow(queryOrderInfoRequestId, requestId, address)
 	order := &Order{}
-	err := row.Scan(&order.UserId, &order.FileId, &order.OrderType, &order.RequestId, &order.Amount, &order.Status, &order.Address, &order.FileSize, &order.FileName, &order.FileHash, &order.ExpireTime, &order.FileVersion)
+	err := row.Scan(&order.Id, &order.UserId, &order.FileId, &order.OrderType, &order.RequestId, &order.Times, &order.Amount, &order.Status, &order.Address, &order.FileSize, &order.FileName, &order.FileHash, &order.ExpireTime, &order.FileVersion)
 	if err != nil {
 		if err.Error() == errorm.QueryResultEmpty {
 			return nil, nil

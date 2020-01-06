@@ -34,10 +34,10 @@ func main() {
 
 	CloseOrder(client, orderId)
 
-	fmt.Println(QueryOrderInfo(client, address, requestId))
-
 	balance = QueryUserBalance(client, address)
 	fmt.Printf("After close order, balance is %v\n", balance)
+
+	fmt.Println(QueryOrderInfo(client, address, requestId))
 
 	orderId, requestId = CreateOrder(client, address, 1000000)
 
@@ -46,32 +46,19 @@ func main() {
 
 	fmt.Println(QueryOrderInfo(client, address, requestId))
 
-	SubmitOrder(client, orderId)
+	UpdateOrder(client, orderId)
+
+	balance = QueryUserBalance(client, address)
+	fmt.Printf("After update order, balance is %v\n", balance)
 
 	fmt.Println(QueryOrderInfo(client, address, requestId))
 
-	balance = QueryUserBalance(client, address)
-	fmt.Printf("After submit order, balance is %v\n", balance)
-
-	orderId, _ = PrepareRenew(client, 1)
-
-	balance = QueryUserBalance(client, address)
-	fmt.Printf("After prepare renew, balance is %v\n", balance)
-
-	CloseOrder(client, orderId)
-
-	balance = QueryUserBalance(client, address)
-	fmt.Printf("After close renew order, balance is %v\n", balance)
-
-	orderId, _ = PrepareRenew(client, 1)
-
-	balance = QueryUserBalance(client, address)
-	fmt.Printf("After prepare renew, balance is %v\n", balance)
-
 	SubmitOrder(client, orderId)
 
 	balance = QueryUserBalance(client, address)
-	fmt.Printf("After submit renew order, balance is %v\n", balance)
+	fmt.Printf("After update order, balance is %v\n", balance)
+
+	fmt.Println(QueryOrderInfo(client, address, requestId))
 }
 
 func QueryUserBalance(c orderPb.OrderServiceClient, address string) int64 {
@@ -134,6 +121,30 @@ func SubmitOrder(c orderPb.OrderServiceClient, orderId int64) {
 	}
 
 	_, err = c.SubmitOrder(context.Background(), request)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func UpdateOrder(c orderPb.OrderServiceClient, orderId int64) {
+	fileHash, err := uuid.NewV4()
+	if err != nil {
+		panic(err)
+	}
+
+	sessionId, err := uuid.NewV4()
+	if err != nil {
+		panic(err)
+	}
+
+	request := &orderPb.UpdateOrderRequest{
+		OrderId:   orderId,
+		SessionId: sessionId.String(),
+		FileHash:  fileHash.String(),
+		NodeIp:    "127.0.0.1",
+	}
+
+	_, err = c.UpdateOrder(context.Background(), request)
 	if err != nil {
 		panic(err)
 	}

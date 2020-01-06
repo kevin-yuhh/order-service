@@ -49,11 +49,21 @@ CREATE TABLE `ledger_log` (
     CONSTRAINT `fk_ledger_log__ledger` FOREIGN KEY(`ledger_id`) REFERENCES `ledger`(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT 'ledger update log';
 
+# BTFS file info.
+CREATE TABLE `btfs_file` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT 'btfs file id',
+    `file_hash` VARCHAR(46) COMMENT 'file hash on BTFS network',
+    `expire_time` TIMESTAMP NOT NULL COMMENT 'file expire time',
+    `version` BIGINT NOT NULL DEFAULT 1 COMMENT 'optimistic lock',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `file_hash` (`file_hash`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT 'btfs file information';
+
 # User file info
 CREATE TABLE `file` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT 'file id',
+    `btfs_file_id` BIGINT COMMENT 'btfs file id',
     `user_id` BIGINT NOT NULL COMMENT 'user id',
-    `file_hash` VARCHAR(46) COMMENT 'file hash on BTFS network',
     `file_name` VARCHAR(128) NOT NULL COMMENT 'file name',
     `file_size` BIGINT NOT NULL COMMENT 'file size',
     `expire_time` TIMESTAMP NOT NULL COMMENT 'file expire time',
@@ -62,8 +72,9 @@ CREATE TABLE `file` (
     `version` BIGINT NOT NULL DEFAULT 1 COMMENT 'optimistic lock',
     `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT 'deleted flg, 0 not delete, 1 deleted',
     PRIMARY KEY (`id`),
+    CONSTRAINT `fk_file__btfs_file` FOREIGN KEY(`btfs_file_id`) REFERENCES `btfs_file`(`id`),
     CONSTRAINT `fk_file__user` FOREIGN KEY(`user_id`) REFERENCES `user`(`id`),
-    UNIQUE KEY `user_id__file_hash` (`user_id`,`file_hash`)
+    UNIQUE KEY `user_id__btfs_file_id` (`user_id`,`btfs_file_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT 'user file information';
 
 # User order info
@@ -72,17 +83,20 @@ CREATE TABLE `order_info` (
     `user_id` BIGINT NOT NULL COMMENT 'user id',
     `file_id` BIGINT NOT NULL COMMENT 'file id',
     `type` CHAR(1) NOT NULL DEFAULT 'C' COMMENT 'C: charge, R: renew',
-    `request_id` VARCHAR(255) NOT NULL COMMENT 'user request order id',
+    `request_id` VARCHAR(36) NOT NULL COMMENT 'user request order id',
+    `session_id` VARCHAR(36) COMMENT 'BTFS contract session id',
     `amount` BIGINT NOT NULL DEFAULT 0 COMMENT 'user order amount',
     `strategy_id` BIGINT NOT NULL COMMENT 'fee strategy id',
     `time` SMALLINT UNSIGNED NOT NULL DEFAULT 90 COMMENT 'file storage time',
     `create_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'order create time',
     `update_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'last update time',
+    `btfs_ip` VARCHAR(15) COMMENT 'upload btfs ip address',
     `description` VARCHAR(255) COMMENT 'order information description',
     `status` CHAR(1) NOT NULL DEFAULT 'U' COMMENT 'order status, default U, pending P, success S, failed F',
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_order_info__user` FOREIGN KEY(`user_id`) REFERENCES `user`(`id`),
     CONSTRAINT `fk_order_info__file` FOREIGN KEY(`file_id`) REFERENCES `file`(`id`),
+    UNIQUE KEY `session_id` (`session_id`),
     UNIQUE KEY `user_id__request_id` (`user_id`,`request_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT 'user order information';
 

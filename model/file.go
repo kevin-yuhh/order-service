@@ -13,7 +13,7 @@ var (
 			a.file_name, 
 			a.file_size, 
 			unix_timestamp(a.expire_time), 
-			a.file_hash,
+			IFNULL(c.file_hash,''),
 			a.deleted, 
 			a.version 
 		FROM 
@@ -22,15 +22,41 @@ var (
 			user b
 		ON
 			a.user_id = b.id
+		LEFT JOIN
+			btfs_file c
+		ON
+			a.btfs_file_id = c.id
 		WHERE
 			a.id = ?
 		`
-	queryFileByUkSql        = `SELECT id, file_name, file_size, unix_timestamp(expire_time), deleted, version FROM file WHERE user_id = ? AND file_hash = ?`
-	queryMaxExpireByHashSql = `select IFNULL(unix_timestamp(max(expire_time)),0) as expire_time from file where file_hash = ?`
+	queryFileByUkSql = `
+		SELECT 
+			id, 
+			file_name, 
+			file_size, 
+			unix_timestamp(expire_time), 
+			deleted, 
+			version 
+		FROM 
+			file
+		WHERE 
+			user_id = ? 
+		AND 
+			btfs_file_id = ?
+		`
+	queryMaxExpireByHashSql = `
+		SELECT 
+			IFNULL(unix_timestamp(max(expire_time)),0) as expire_time 
+		FROM 
+			file 
+		WHERE 
+			btfs_file_id = ?
+		`
 	insertFileInfoSql       = `INSERT INTO file (user_id, file_name, file_size, expire_time) VALUES (?, ?, ?, from_unixtime(?))`
-	updateFileHashSql       = `UPDATE file SET file_hash = ?, version = version + 1 WHERE id = ? AND version = ? AND file_hash IS NULL`
+	updateBtfsFileIdSql     = `UPDATE file SET btfs_file_id = ?, version = version + 1 WHERE id = ? AND version = ? AND btfs_file_id IS NULL`
 	updateFileExpireTimeSql = `UPDATE file SET expire_time = from_unixtime(?), version = version + 1 WHERE id = ? AND version = ?`
 	deleteFileSql           = `UPDATE file SET deleted = 1, version = version + 1 WHERE id = ? AND deleted = 0 AND version = ?`
+	reopenFileSql           = `UPDATE file SET deleted = 0, expire_time = from_unixtime(?), version = version + 1 WHERE id = ? AND deleted = 1 AND version = ?`
 )
 
 type File struct {
@@ -60,9 +86,9 @@ func (db *Database) QueryFileById(id int64) (*File, error) {
 }
 
 // Select file information by UK.
-func (db *Database) QueryFileByUk(userId int64, fileHash string) (*File, error) {
+func (db *Database) QueryFileByUk(userId, btfsFileId int64) (*File, error) {
 	// Execute query sql.
-	row := db.DB.DB().QueryRow(queryFileByUkSql, userId, fileHash)
+	row := db.DB.DB().QueryRow(queryFileByUkSql, userId, btfsFileId)
 	file := &File{}
 	err := row.Scan(&file.Id, &file.FileName, &file.FileSize, &file.ExpireTime, &file.Deleted, &file.Version)
 	if err != nil {
@@ -72,10 +98,10 @@ func (db *Database) QueryFileByUk(userId int64, fileHash string) (*File, error) 
 	return file, nil
 }
 
-// Select max expire time by file hash.
-func (db *Database) QueryMaxExpireByHash(fileHash string) (int64, error) {
+// Select max expire time by btfs file id.
+func (db *Database) QueryMaxExpireByHash(btfsFileId int64) (int64, error) {
 	// Execute query sql.
-	row := db.DB.DB().QueryRow(queryMaxExpireByHashSql, fileHash)
+	row := db.DB.DB().QueryRow(queryMaxExpireByHashSql, btfsFileId)
 
 	var maxExpireTime int64
 
@@ -104,10 +130,10 @@ func InsertFileInfo(session *xorm.Session, userId, fileSize int64, fileName stri
 	return id, nil
 }
 
-// Update file hash by file id.
-func UpdateFileHash(session *xorm.Session, id, version int64, fileHash string) error {
+// Update btfs file id by id.
+func UpdateBtfsFileId(session *xorm.Session, btfsFileId, id, version int64) error {
 	// Execute update sql.
-	r, err := session.Exec(updateFileHashSql, fileHash, id, version)
+	r, err := session.Exec(updateBtfsFileIdSql, btfsFileId, id, version)
 	if err != nil {
 		return err
 	}
@@ -150,6 +176,27 @@ func UpdateFileExpireTime(session *xorm.Session, expireTime, id, version int64) 
 func DeleteFile(session *xorm.Session, id, version int64) error {
 	// Execute update sql.
 	r, err := session.Exec(deleteFileSql, id, version)
+	if err != nil {
+		return err
+	}
+
+	// Get affected number.
+	affected, err := r.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	// Row has not changed.
+	if affected != 1 {
+		return errorm.RowNotChanged
+	}
+	return nil
+}
+
+// Update file status to exists and update expire time.
+func ReopenFile(session *xorm.Session, id, version, expireTime int64) error {
+	// Execute update sql.
+	r, err := session.Exec(reopenFileSql, expireTime, id, version)
 	if err != nil {
 		return err
 	}
