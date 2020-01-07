@@ -18,4 +18,8 @@ const (
 
 	BtfsNodeAgentComplete = "complete"
 	BtfsNodeAgentError    = "error"
+
+	KafkaResultSuccess = "success"
+	KafkaResultFailed  = "failed"
+	KafkaResultError   = "error"
 )

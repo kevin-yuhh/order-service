@@ -31,12 +31,19 @@ type SlackConfiguration struct {
 	SlackPriorityThreshold   int
 }
 
+type KafkaConfiguration struct {
+	Topic     []string
+	Zookeeper []string
+	GroupId   string
+}
+
 type Configuration struct {
 	Server   ServerConfiguration
 	Database DatabaseConfiguration
 	Env      string
 	Logger   LoggerConfiguration
 	Slack    SlackConfiguration
+	Kafka    KafkaConfiguration
 	EvChan   chan bool
 }
 

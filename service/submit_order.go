@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -11,9 +12,73 @@ import (
 	"github.com/TRON-US/soter-order-service/model"
 	"github.com/TRON-US/soter-order-service/utils"
 
+	"github.com/Shopify/sarama"
 	"github.com/TRON-US/chaos/network/slack"
+	cluster "github.com/bsm/sarama-cluster"
 	"github.com/go-xorm/xorm"
 )
+
+type OrderNotify struct {
+	Result    string `json:"result"`
+	OrderId   int64  `json:"order_id"`
+	SessionId string `json:"session_id"`
+	FileHash  string `json:"file_hash"`
+}
+
+// Process success or error order info.
+func (s *Server) ClusterConsumer(brokers, topics []string, groupId string) error {
+	config := cluster.NewConfig()
+	config.Consumer.Return.Errors = true
+	config.Group.Return.Notifications = true
+
+	// TODO Read processing offset from redis.
+	config.Consumer.Offsets.Initial = sarama.OffsetNewest
+
+	// Init kafka consumer.
+	consumer, err := cluster.NewConsumer(s.Config.Kafka.Zookeeper, s.Config.Kafka.GroupId, s.Config.Kafka.Topic, config)
+	if err != nil {
+		logger.Logger.Fatalf("GroupId: [%v] new consumer error, reasons: [%v]", groupId, err)
+	}
+	defer consumer.Close()
+
+	// Consume errors.
+	go func() {
+		for err := range consumer.Errors() {
+			logger.Logger.Errorf("GroupId: [%v] consume error, reasons: [%v]", groupId, err)
+		}
+	}()
+
+	// Consume notifications.
+	go func() {
+		for ntf := range consumer.Notifications() {
+			logger.Logger.Infof("%s:Rebalanced: %+v", groupId, ntf)
+		}
+	}()
+
+	// Consume messages.
+	for {
+		select {
+		case msg, ok := <-consumer.Messages():
+			if ok {
+				order := OrderNotify{}
+				err := json.Unmarshal(msg.Value, &order)
+				if err != nil {
+					consumer.MarkOffset(msg, constants.KafkaResultError)
+					continue
+				}
+
+				// Submit order by file hash, result and order id.
+				err = s.SubmitOrderController(order.FileHash, order.Result, order.OrderId)
+				if err != nil {
+					consumer.MarkOffset(msg, constants.KafkaResultFailed)
+					continue
+				}
+
+				consumer.MarkOffset(msg, constants.KafkaResultSuccess)
+			}
+		}
+	}
+}
 
 // Submit order controller.
 func (s *Server) SubmitOrderController(fileHash, result string, orderId int64) error {

@@ -19,3 +19,8 @@ slack:
   slackNotificationTimeout: 30
   slackWebhookUrl: https://hooks.slack.com/services/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
   slackPriorityThreshold: 5
+
+kafka:
+  topic: ["order"]
+  zookeeper: ["localhost:9092"]
+  groupId: "order-0"
