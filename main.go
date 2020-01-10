@@ -92,6 +92,8 @@ func main() {
 
 	server.Fee.Reload()
 
+	go server.ClusterConsumer()
+
 	// Register gRPC server.
 	orderPb.RegisterOrderServiceServer(s, server)
 

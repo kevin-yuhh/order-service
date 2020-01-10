@@ -26,7 +26,7 @@ type OrderNotify struct {
 }
 
 // Process success or error order info.
-func (s *Server) ClusterConsumer(brokers, topics []string, groupId string) error {
+func (s *Server) ClusterConsumer() {
 	config := cluster.NewConfig()
 	config.Consumer.Return.Errors = true
 	config.Group.Return.Notifications = true
@@ -37,21 +37,21 @@ func (s *Server) ClusterConsumer(brokers, topics []string, groupId string) error
 	// Init kafka consumer.
 	consumer, err := cluster.NewConsumer(s.Config.Kafka.Zookeeper, s.Config.Kafka.GroupId, s.Config.Kafka.Topic, config)
 	if err != nil {
-		logger.Logger.Fatalf("GroupId: [%v] new consumer error, reasons: [%v]", groupId, err)
+		logger.Logger.Fatalf("GroupId: [%v] new consumer error, reasons: [%v]", s.Config.Kafka.GroupId, err)
 	}
 	defer consumer.Close()
 
 	// Consume errors.
 	go func() {
 		for err := range consumer.Errors() {
-			logger.Logger.Errorf("GroupId: [%v] consume error, reasons: [%v]", groupId, err)
+			logger.Logger.Errorf("GroupId: [%v] consume error, reasons: [%v]", s.Config.Kafka.GroupId, err)
 		}
 	}()
 
 	// Consume notifications.
 	go func() {
 		for ntf := range consumer.Notifications() {
-			logger.Logger.Infof("%s:Rebalanced: %+v", groupId, ntf)
+			logger.Logger.Infof("%s:Rebalanced: %+v", s.Config.Kafka.GroupId, ntf)
 		}
 	}()
 
