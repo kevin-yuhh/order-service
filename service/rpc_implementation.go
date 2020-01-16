@@ -77,7 +77,7 @@ func (s *Server) CreateOrder(ctx context.Context, in *orderPb.CreateOrderRequest
 		return nil, err
 	}
 
-	return &orderPb.CreateOrderResponse{OrderId: *id}, nil
+	return &orderPb.CreateOrderResponse{OrderId: *id, SaveDays: int64(s.Time)}, nil
 }
 
 // Update file hash and session id.
