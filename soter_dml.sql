@@ -1,8 +1,8 @@
 INSERT INTO strategy (id, type, lua_script)
 VALUES (1, 0, 'M = 1000000  -- 1 MB
 G = M * 1000 -- 1 GB
-D = 5        -- upload times > 1000, file size <= 1M charge 0.000005BTT
-F = 1998     -- 1 GB charge
+D = 1000     -- upload times > 1000, file size <= 1M charge 0.001BTT
+F = 799200   -- 1 GB charge
 T = 1000     -- 1000 times
 
 function size_fee(size, total_times)
@@ -14,9 +14,9 @@ function size_fee(size, total_times)
     if size > 0 and size <= M then
         return default_charge;
     elseif size > M and size <= G then
-        return (size - M) / M * 2 + default_charge;
+        return (size - M) / M * 800 + default_charge;
     else
-        return default_charge + F + (size - G) / M;
+        return default_charge + F + (size - G) / M * 600;
     end
 end
 
