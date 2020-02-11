@@ -1,6 +1,7 @@
 package model
 
 import (
+	"strconv"
 	"time"
 
 	chaos "github.com/TRON-US/chaos/project/soter"
@@ -10,6 +11,25 @@ import (
 )
 
 var (
+	lockLedgerInfoByAddressSql = `
+			SELECT
+				id,
+				user_id,
+				address,
+				total_times,
+				total_size,
+				balance,
+				freeze_balance,
+				total_fee,
+				unix_timestamp(update_time) as update_time,
+				balance_check,
+				version 
+			FROM 
+				ledger 
+			WHERE 
+				address = ? 
+			FOR UPDATE
+		`
 	queryLedgerInfoByAddressSql = `
 			SELECT
 				id,
@@ -70,6 +90,65 @@ type Ledger struct {
 	UpdateTime    int
 	BalanceCheck  string
 	Version       int64
+}
+
+// Lock mysql row by address.
+func (db *Database) LockLedgerInfoByAddress(session *xorm.Session, address string) (*Ledger, error) {
+	// Execute SQL.
+	ledgerMap, err := session.Query(lockLedgerInfoByAddressSql, address)
+	if err != nil {
+		return nil, err
+	}
+
+	ledger := &Ledger{}
+
+	if ledgerMap == nil {
+		_ = session.Commit()
+		// Open transaction.
+		session1 := db.DB.NewSession()
+		err := session1.Begin()
+		if err != nil {
+			return nil, err
+		}
+		defer session1.Close()
+
+		// Init user info.
+		userId, err := initUser(session1, address)
+		if err != nil {
+			_ = session1.Rollback()
+			return nil, err
+		}
+
+		// Init ledger info
+		ledger, err = initLedger(session1, userId, address)
+		if err != nil {
+			_ = session1.Rollback()
+			return nil, err
+		}
+
+		// Commit transaction.
+		err = session1.Commit()
+		if err != nil {
+			return nil, err
+		}
+
+		ledgerMap, err = session.Query(lockLedgerInfoByAddressSql, address)
+		if err != nil {
+			return nil, err
+		}
+
+		if ledgerMap == nil {
+			return nil, errorm.InitLedgerInfoError
+		}
+
+	}
+
+	err = ledger.convertLedgerMapToStruct(ledgerMap)
+	if err != nil {
+		return nil, err
+	}
+
+	return ledger, nil
 }
 
 // Select ledger by user address.
@@ -246,4 +325,67 @@ func (ledger *Ledger) GetBalanceCheck() (string, error) {
 	}
 
 	return balanceCheck.GetBalanceCheck()
+}
+
+// Convert ledger map to struct.
+func (ledger *Ledger) convertLedgerMapToStruct(ledgerMap []map[string][]byte) error {
+	id, err := strconv.ParseInt(string(ledgerMap[0]["id"]), 10, 64)
+	if err != nil {
+		return err
+	}
+	ledger.Id = id
+
+	userId, err := strconv.ParseInt(string(ledgerMap[0]["user_id"]), 10, 64)
+	if err != nil {
+		return err
+	}
+	ledger.UserId = userId
+
+	ledger.Address = string(ledgerMap[0]["address"])
+
+	totalTimes, err := strconv.Atoi(string(ledgerMap[0]["total_times"]))
+	if err != nil {
+		return err
+	}
+	ledger.TotalTimes = totalTimes
+
+	totalSize, err := strconv.ParseInt(string(ledgerMap[0]["total_size"]), 10, 64)
+	if err != nil {
+		return err
+	}
+	ledger.TotalSize = totalSize
+
+	balance, err := strconv.ParseInt(string(ledgerMap[0]["balance"]), 10, 64)
+	if err != nil {
+		return err
+	}
+	ledger.Balance = balance
+
+	freezeBalance, err := strconv.ParseInt(string(ledgerMap[0]["freeze_balance"]), 10, 64)
+	if err != nil {
+		return err
+	}
+	ledger.FreezeBalance = freezeBalance
+
+	totalFee, err := strconv.ParseInt(string(ledgerMap[0]["total_fee"]), 10, 64)
+	if err != nil {
+		return err
+	}
+	ledger.TotalFee = totalFee
+
+	updateTime, err := strconv.Atoi(string(ledgerMap[0]["update_time"]))
+	if err != nil {
+		return err
+	}
+	ledger.UpdateTime = updateTime
+
+	ledger.BalanceCheck = string(ledgerMap[0]["balance_check"])
+
+	version, err := strconv.ParseInt(string(ledgerMap[0]["version"]), 10, 64)
+	if err != nil {
+		return err
+	}
+	ledger.Version = version
+
+	return nil
 }

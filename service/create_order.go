@@ -15,14 +15,31 @@ import (
 
 // Create order controller.
 func (s *Server) CreateOrderController(address, requestId, fileName string, fileSize int64) (*int64, error) {
-	// Query ledger info by address.
-	ledger, err := s.DbConn.QueryLedgerInfoByAddress(address)
+	// Open transaction.
+	session := s.DbConn.DB.NewSession()
+	err := session.Begin()
 	if err != nil {
 		go func(address, requestId string, err error) {
-			errMessage := fmt.Sprintf("Address: [%v], requestId: [%v] query ledger info error, reasons: [%v]", address, requestId, err)
-			logger.Logger.Errorw(errMessage, "function", constants.QueryLedgerInfoModel)
+			errMessage := fmt.Sprintf("Address: [%v], requestId: [%v] open transaction error, reasons: [%v]", address, requestId, err)
+			logger.Logger.Errorw(errMessage, "function", constants.SessionBegin)
 			_ = slack.SendSlackNotification(s.Config.Slack.SlackWebhookUrl,
-				utils.ErrorRequestBody(errMessage, constants.QueryLedgerInfoModel, constants.SlackNotifyLevel0),
+				utils.ErrorRequestBody(errMessage, constants.SessionBegin, constants.SlackNotifyLevel0),
+				s.Config.Slack.SlackNotificationTimeout,
+				slack.Priority0, slack.Priority(s.Config.Slack.SlackPriorityThreshold))
+		}(address, requestId, err)
+		return nil, err
+	}
+	defer session.Close()
+
+	// Lock row by address.
+	ledger, err := s.DbConn.LockLedgerInfoByAddress(session, address)
+	if err != nil {
+		_ = session.Rollback()
+		go func(address, requestId string, err error) {
+			errMessage := fmt.Sprintf("Address: [%v], requestId: [%v] get lock error, reasons: [%v]", address, requestId, err)
+			logger.Logger.Errorw(errMessage, "function", constants.GetLedgerRowLockModel)
+			_ = slack.SendSlackNotification(s.Config.Slack.SlackWebhookUrl,
+				utils.ErrorRequestBody(errMessage, constants.GetLedgerRowLockModel, constants.SlackNotifyLevel0),
 				s.Config.Slack.SlackNotificationTimeout,
 				slack.Priority0, slack.Priority(s.Config.Slack.SlackPriorityThreshold))
 		}(address, requestId, err)
@@ -35,6 +52,7 @@ func (s *Server) CreateOrderController(address, requestId, fileName string, file
 	// Get activity rate.
 	rate, err := s.DbConn.QueryActivityByUserId(ledger.UserId)
 	if err != nil {
+		_ = session.Rollback()
 		go func(address, requestId string, err error) {
 			errMessage := fmt.Sprintf("Address: [%v], requestId: [%v] query activity info error, reasons: [%v]", address, requestId, err)
 			logger.Logger.Errorw(errMessage, "function", constants.QueryActivityInfoModel)
@@ -50,24 +68,9 @@ func (s *Server) CreateOrderController(address, requestId, fileName string, file
 
 	// Check balance illegal.
 	if ledger.Balance < amount {
+		_ = session.Rollback()
 		return nil, errorm.InsufficientBalance
 	}
-
-	// Open transaction.
-	session := s.DbConn.DB.NewSession()
-	err = session.Begin()
-	if err != nil {
-		go func(address, requestId string, err error) {
-			errMessage := fmt.Sprintf("Address: [%v], requestId: [%v] open transaction error, reasons: [%v]", address, requestId, err)
-			logger.Logger.Errorw(errMessage, "function", constants.SessionBegin)
-			_ = slack.SendSlackNotification(s.Config.Slack.SlackWebhookUrl,
-				utils.ErrorRequestBody(errMessage, constants.SessionBegin, constants.SlackNotifyLevel0),
-				s.Config.Slack.SlackNotificationTimeout,
-				slack.Priority0, slack.Priority(s.Config.Slack.SlackPriorityThreshold))
-		}(address, requestId, err)
-		return nil, err
-	}
-	defer session.Close()
 
 	// Insert file information
 	fileId, err := model.InsertFileInfo(session, ledger.UserId, fileSize, fileName, int(time.Now().Local().Unix())+s.Time*constants.DaySeconds)

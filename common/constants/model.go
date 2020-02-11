@@ -3,6 +3,7 @@ package constants
 const (
 	QueryLedgerInfoModel          = "model.QueryLedgerInfoByAddress"
 	QueryActivityInfoModel        = "model.QueryActivityByUserId"
+	GetLedgerRowLockModel         = "model.LockLedgerInfoByAddress"
 	SessionBegin                  = "session.Begin"
 	SessionCommit                 = "session.Commit"
 	InsertFileInfoModel           = "model.InsertFileInfo"

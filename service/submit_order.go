@@ -108,25 +108,6 @@ func (s *Server) SubmitOrderController(fileHash, result string, orderId int64) e
 		return errorm.OrderTypeIllegal
 	}
 
-	// Query ledger info by address.
-	ledger, err := s.DbConn.QueryLedgerInfoByAddress(order.Address)
-	if err != nil {
-		go func(orderId int64, err error) {
-			errMessage := fmt.Sprintf("orderId: [%v] query ledger info error, reasons: [%v]", orderId, err)
-			logger.Logger.Errorw(errMessage, "function", constants.QueryLedgerInfoModel)
-			_ = slack.SendSlackNotification(s.Config.Slack.SlackWebhookUrl,
-				utils.ErrorRequestBody(errMessage, constants.QueryLedgerInfoModel, constants.SlackNotifyLevel0),
-				s.Config.Slack.SlackNotificationTimeout,
-				slack.Priority0, slack.Priority(s.Config.Slack.SlackPriorityThreshold))
-		}(orderId, err)
-		return err
-	}
-
-	// Check freeze balance illegal.
-	if ledger.FreezeBalance < order.Amount {
-		return errorm.InsufficientBalance
-	}
-
 	// Open transaction.
 	session := s.DbConn.DB.NewSession()
 	err = session.Begin()
@@ -142,6 +123,27 @@ func (s *Server) SubmitOrderController(fileHash, result string, orderId int64) e
 		return err
 	}
 	defer session.Close()
+
+	// Lock row by address.
+	ledger, err := s.DbConn.LockLedgerInfoByAddress(session, order.Address)
+	if err != nil {
+		_ = session.Rollback()
+		go func(orderId int64, err error) {
+			errMessage := fmt.Sprintf("orderId: [%v] get lock error, reasons: [%v]", orderId, err)
+			logger.Logger.Errorw(errMessage, "function", constants.GetLedgerRowLockModel)
+			_ = slack.SendSlackNotification(s.Config.Slack.SlackWebhookUrl,
+				utils.ErrorRequestBody(errMessage, constants.GetLedgerRowLockModel, constants.SlackNotifyLevel0),
+				s.Config.Slack.SlackNotificationTimeout,
+				slack.Priority0, slack.Priority(s.Config.Slack.SlackPriorityThreshold))
+		}(orderId, err)
+		return err
+	}
+
+	// Check freeze balance illegal.
+	if ledger.FreezeBalance < order.Amount {
+		_ = session.Rollback()
+		return errorm.InsufficientBalance
+	}
 
 	if result == constants.BtfsNodeAgentError {
 		// Query if exists file on same file hash.

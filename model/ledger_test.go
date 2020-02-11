@@ -7,6 +7,28 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestLockLedgerInfoByAddress(t *testing.T) {
+	database := PrepareTestDatabase()
+
+	session := database.DB.NewSession()
+	err := session.Begin()
+	assert.NoError(t, err)
+	defer session.Close()
+
+	ledger, err := database.LockLedgerInfoByAddress(session, "TEAxH9kfc28syd1cBrwbsBz88QG5wPL8Ek")
+	if err != nil {
+		err1 := session.Rollback()
+		assert.NoError(t, err1)
+		t.Error(err)
+		return
+	}
+
+	err = session.Commit()
+	assert.NoError(t, err)
+
+	t.Log(ledger)
+}
+
 func TestDatabase_QueryLedgerInfoByAddress(t *testing.T) {
 	database := PrepareTestDatabase()
 

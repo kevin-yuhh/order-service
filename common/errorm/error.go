@@ -11,4 +11,5 @@ var (
 	OrderTypeIllegal    = errors.New("order type illegal")
 	OrderNotExists      = errors.New("order not exists")
 	BtfsStatusNotExists = errors.New("btfs status not exists")
+	InitLedgerInfoError = errors.New("init ledger info error")
 )
