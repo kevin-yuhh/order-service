@@ -94,6 +94,8 @@ func main() {
 
 	go server.ClusterConsumer()
 
+	go service.PrometheusServer(conf.Prometheus.Port)
+
 	// Register gRPC server.
 	orderPb.RegisterOrderServiceServer(s, server)
 

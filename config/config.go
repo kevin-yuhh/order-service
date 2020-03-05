@@ -37,14 +37,19 @@ type KafkaConfiguration struct {
 	GroupId   string
 }
 
+type PrometheusConfiguration struct {
+	Port int
+}
+
 type Configuration struct {
-	Server   ServerConfiguration
-	Database DatabaseConfiguration
-	Env      string
-	Logger   LoggerConfiguration
-	Slack    SlackConfiguration
-	Kafka    KafkaConfiguration
-	EvChan   chan bool
+	Server     ServerConfiguration
+	Database   DatabaseConfiguration
+	Env        string
+	Logger     LoggerConfiguration
+	Slack      SlackConfiguration
+	Kafka      KafkaConfiguration
+	Prometheus PrometheusConfiguration
+	EvChan     chan bool
 }
 
 // Get config struct from file.

@@ -16,6 +16,7 @@ import (
 	"github.com/TRON-US/chaos/network/slack"
 	cluster "github.com/bsm/sarama-cluster"
 	"github.com/go-xorm/xorm"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type OrderNotify struct {
@@ -60,9 +61,13 @@ func (s *Server) ClusterConsumer() {
 		select {
 		case msg, ok := <-consumer.Messages():
 			if ok {
+				t := time.Now()
+				rpcRequestCount.With(prometheus.Labels{"method": "SubmitOrderTotal", "date": t.Format("2006-01-02")}).Inc()
+
 				order := OrderNotify{}
 				err := json.Unmarshal(msg.Value, &order)
 				if err != nil {
+					rpcRequestCount.With(prometheus.Labels{"method": "SubmitOrderFailed", "date": t.Format("2006-01-02")}).Inc()
 					consumer.MarkOffset(msg, constants.KafkaResultError)
 					continue
 				}
@@ -70,10 +75,14 @@ func (s *Server) ClusterConsumer() {
 				// Submit order by file hash, result and order id.
 				err = s.SubmitOrderController(order.FileHash, order.Result, order.OrderId)
 				if err != nil {
+					rpcRequestCount.With(prometheus.Labels{"method": "SubmitOrderError", "date": t.Format("2006-01-02")}).Inc()
+					rpcRequestDuration.With(prometheus.Labels{"method": "SubmitOrder", "date": t.Format("2006-01-02")}).Observe(float64(time.Since(t).Microseconds()) / 1000)
 					consumer.MarkOffset(msg, constants.KafkaResultFailed)
 					continue
 				}
 
+				rpcRequestCount.With(prometheus.Labels{"method": "SubmitOrderSuccess", "date": t.Format("2006-01-02")}).Inc()
+				rpcRequestDuration.With(prometheus.Labels{"method": "SubmitOrder", "date": t.Format("2006-01-02")}).Observe(float64(time.Since(t).Microseconds()) / 1000)
 				consumer.MarkOffset(msg, constants.KafkaResultSuccess)
 			}
 		}

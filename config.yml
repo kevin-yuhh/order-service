@@ -24,3 +24,6 @@ kafka:
   topic: ["order"]
   zookeeper: ["localhost:9092"]
   groupId: "order-0"
+
+prometheus:
+  port: 2112
