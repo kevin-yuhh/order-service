@@ -62,12 +62,12 @@ func (s *Server) ClusterConsumer() {
 		case msg, ok := <-consumer.Messages():
 			if ok {
 				t := time.Now()
-				rpcRequestCount.With(prometheus.Labels{"method": "SubmitOrderTotal", "date": t.Format("2006-01-02")}).Inc()
+				rpcRequestCount.With(prometheus.Labels{"method": "SubmitOrderTotal"}).Inc()
 
 				order := OrderNotify{}
 				err := json.Unmarshal(msg.Value, &order)
 				if err != nil {
-					rpcRequestCount.With(prometheus.Labels{"method": "SubmitOrderFailed", "date": t.Format("2006-01-02")}).Inc()
+					rpcRequestCount.With(prometheus.Labels{"method": "SubmitOrderFailed"}).Inc()
 					consumer.MarkOffset(msg, constants.KafkaResultError)
 					continue
 				}
@@ -75,14 +75,14 @@ func (s *Server) ClusterConsumer() {
 				// Submit order by file hash, result and order id.
 				err = s.SubmitOrderController(order.FileHash, order.Result, order.OrderId)
 				if err != nil {
-					rpcRequestCount.With(prometheus.Labels{"method": "SubmitOrderError", "date": t.Format("2006-01-02")}).Inc()
-					rpcRequestDuration.With(prometheus.Labels{"method": "SubmitOrder", "date": t.Format("2006-01-02")}).Observe(float64(time.Since(t).Microseconds()) / 1000)
+					rpcRequestCount.With(prometheus.Labels{"method": "SubmitOrderError"}).Inc()
+					rpcRequestDuration.With(prometheus.Labels{"method": "SubmitOrder"}).Observe(float64(time.Since(t).Microseconds()) / 1000)
 					consumer.MarkOffset(msg, constants.KafkaResultFailed)
 					continue
 				}
 
-				rpcRequestCount.With(prometheus.Labels{"method": "SubmitOrderSuccess", "date": t.Format("2006-01-02")}).Inc()
-				rpcRequestDuration.With(prometheus.Labels{"method": "SubmitOrder", "date": t.Format("2006-01-02")}).Observe(float64(time.Since(t).Microseconds()) / 1000)
+				rpcRequestCount.With(prometheus.Labels{"method": "SubmitOrderSuccess"}).Inc()
+				rpcRequestDuration.With(prometheus.Labels{"method": "SubmitOrder"}).Observe(float64(time.Since(t).Microseconds()) / 1000)
 				consumer.MarkOffset(msg, constants.KafkaResultSuccess)
 			}
 		}

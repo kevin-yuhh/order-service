@@ -19,7 +19,7 @@ var (
 			Name: "rpc_request_count",
 			Help: "Number of rpc request count",
 		},
-		[]string{"method", "date"},
+		[]string{"method"},
 	)
 
 	rpcRequestDuration = prometheus.NewHistogramVec(
