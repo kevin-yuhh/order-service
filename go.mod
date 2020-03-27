@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/Shopify/sarama v1.19.0
-	github.com/TRON-US/chaos v1.0.0
+	github.com/TRON-US/chaos v1.0.1
 	github.com/TRON-US/soter-proto v0.0.0-20200116061827-36ebb9485ad4
 	github.com/bsm/sarama-cluster v2.1.15+incompatible
 	github.com/fsnotify/fsnotify v1.4.7
@@ -18,7 +18,7 @@ require (
 	github.com/stretchr/testify v1.4.0
 	github.com/yuin/gopher-lua v0.0.0-20191128022950-c6266f4fe8d7
 	go.uber.org/zap v1.10.0
-	golang.org/x/net v0.0.0-20190522155817-f3200d17e092
-	google.golang.org/grpc v1.25.1
+	golang.org/x/net v0.0.0-20190620200207-3b0461eec859
+	google.golang.org/grpc v1.26.0
 	gopkg.in/testfixtures.v2 v2.6.0
 )

@@ -8,6 +8,11 @@ database:
 server:
   host: localhost
   port: 6661
+  name: "order-service"
+  version: "1.0"
+
+zookeeper:
+  servers: ["localhost:2181"]
 
 env: "DEV"
 
@@ -22,7 +27,7 @@ slack:
 
 kafka:
   topic: ["order"]
-  zookeeper: ["localhost:9092"]
+  servers: ["localhost:9092"]
   groupId: "order-0"
 
 prometheus:

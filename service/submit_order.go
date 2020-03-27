@@ -36,7 +36,7 @@ func (s *Server) ClusterConsumer() {
 	config.Consumer.Offsets.Initial = sarama.OffsetNewest
 
 	// Init kafka consumer.
-	consumer, err := cluster.NewConsumer(s.Config.Kafka.Zookeeper, s.Config.Kafka.GroupId, s.Config.Kafka.Topic, config)
+	consumer, err := cluster.NewConsumer(s.Config.Kafka.Servers, s.Config.Kafka.GroupId, s.Config.Kafka.Topic, config)
 	if err != nil {
 		logger.Logger.Fatalf("GroupId: [%v] new consumer error, reasons: [%v]", s.Config.Kafka.GroupId, err)
 	}

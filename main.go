@@ -4,6 +4,9 @@ import (
 	goFlag "flag"
 	"fmt"
 	"net"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/TRON-US/soter-order-service/charge"
@@ -11,8 +14,10 @@ import (
 	"github.com/TRON-US/soter-order-service/logger"
 	"github.com/TRON-US/soter-order-service/model"
 	"github.com/TRON-US/soter-order-service/service"
+	"github.com/TRON-US/soter-order-service/utils"
 	orderPb "github.com/TRON-US/soter-proto/order-service"
 
+	registry "github.com/TRON-US/chaos/zookeeper"
 	"github.com/prometheus/common/log"
 	flag "github.com/spf13/pflag"
 	"go.uber.org/zap/zapcore"
@@ -92,6 +97,23 @@ func main() {
 
 	server.Fee.Reload()
 
+	registrar, err := registry.NewRegistrar(
+		registry.Option{
+			ZkServers:      server.Config.Zookeeper.Servers,
+			RegistryDir:    registry.RegistryDir,
+			ServiceName:    server.Config.Server.Name,
+			ServiceVersion: server.Config.Server.Version,
+			NodeID:         fmt.Sprintf("%s_%d", utils.GetLocalIpAddress(), server.Config.Server.Port),
+			NData: registry.NodeData{
+				Addr:     fmt.Sprintf("%s:%d", utils.GetLocalIpAddress(), server.Config.Server.Port),
+				Metadata: map[string]string{"weight": "1"},
+			},
+			SessionTimeout: 10 * time.Second,
+		})
+	if err != nil {
+		panic(err)
+	}
+
 	go server.ClusterConsumer()
 
 	go service.PrometheusServer(conf.Prometheus.Port)
@@ -99,10 +121,23 @@ func main() {
 	// Register gRPC server.
 	orderPb.RegisterOrderServiceServer(s, server)
 
-	logger.Logger.Infof("[%v] server started, listening on port: [%v]", conf.Env, conf.Server.Port)
-	if err = s.Serve(lis); err != nil {
-		panic(err)
-	}
+	go func() {
+		logger.Logger.Infof("[%v] server started, listening on port: [%v]", conf.Env, conf.Server.Port)
+		if err = s.Serve(lis); err != nil {
+			panic(err)
+		}
+	}()
+
+	go func() {
+		_ = registrar.Register()
+	}()
+
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, syscall.SIGTERM, syscall.SIGINT, syscall.SIGKILL, syscall.SIGHUP, syscall.SIGQUIT)
+	ch := <-signalChan
+	log.Info(fmt.Sprintf("Received signal [%v]", ch))
+	registrar.Unregister()
+	s.GracefulStop()
 }
 
 // Global panic recover.

@@ -16,8 +16,14 @@ type DatabaseConfiguration struct {
 }
 
 type ServerConfiguration struct {
-	Host string
-	Port int
+	Host    string
+	Port    int
+	Name    string
+	Version string
+}
+
+type ZookeeperConfiguration struct {
+	Servers []string
 }
 
 type LoggerConfiguration struct {
@@ -32,9 +38,9 @@ type SlackConfiguration struct {
 }
 
 type KafkaConfiguration struct {
-	Topic     []string
-	Zookeeper []string
-	GroupId   string
+	Topic   []string
+	Servers []string
+	GroupId string
 }
 
 type PrometheusConfiguration struct {
@@ -43,6 +49,7 @@ type PrometheusConfiguration struct {
 
 type Configuration struct {
 	Server     ServerConfiguration
+	Zookeeper  ZookeeperConfiguration
 	Database   DatabaseConfiguration
 	Env        string
 	Logger     LoggerConfiguration
