@@ -7,9 +7,10 @@ database:
 
 server:
   host: 0.0.0.0
+  registerHost: "172.31.35.151"
   port: 8301
   name: "order-service"
-  version: "1.0"
+  version: "v1.0"
 
 zookeeper:
   servers: ["localhost:2181"]

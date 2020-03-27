@@ -16,10 +16,11 @@ type DatabaseConfiguration struct {
 }
 
 type ServerConfiguration struct {
-	Host    string
-	Port    int
-	Name    string
-	Version string
+	Host         string
+	RegisterHost string
+	Port         int
+	Name         string
+	Version      string
 }
 
 type ZookeeperConfiguration struct {

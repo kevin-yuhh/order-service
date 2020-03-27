@@ -14,7 +14,6 @@ import (
 	"github.com/TRON-US/soter-order-service/logger"
 	"github.com/TRON-US/soter-order-service/model"
 	"github.com/TRON-US/soter-order-service/service"
-	"github.com/TRON-US/soter-order-service/utils"
 	orderPb "github.com/TRON-US/soter-proto/order-service"
 
 	registry "github.com/TRON-US/chaos/zookeeper"
@@ -103,9 +102,9 @@ func main() {
 			RegistryDir:    registry.RegistryDir,
 			ServiceName:    server.Config.Server.Name,
 			ServiceVersion: server.Config.Server.Version,
-			NodeID:         fmt.Sprintf("%s_%d", utils.GetLocalIpAddress(), server.Config.Server.Port),
+			NodeID:         fmt.Sprintf("%s_%d", server.Config.Server.RegisterHost, server.Config.Server.Port),
 			NData: registry.NodeData{
-				Addr:     fmt.Sprintf("%s:%d", utils.GetLocalIpAddress(), server.Config.Server.Port),
+				Addr:     fmt.Sprintf("%s:%d", server.Config.Server.RegisterHost, server.Config.Server.Port),
 				Metadata: map[string]string{"weight": "1"},
 			},
 			SessionTimeout: 10 * time.Second,

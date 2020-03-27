@@ -6,10 +6,11 @@ database:
   maxLifetime: 60
 
 server:
-  host: localhost
+  host: "localhost"
+  registerHost: "localhost"
   port: 6661
   name: "order-service"
-  version: "1.0"
+  version: "v1.0"
 
 zookeeper:
   servers: ["localhost:2181"]
